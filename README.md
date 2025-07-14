@@ -1,5 +1,10 @@
-# ShearerTriangleFreeInd
+# Shearer's Theorem on Triangle-Free Graphs
 
-## Summary 
+A formal proof in Lean 4 of Shearer's theorem (shearer1983) on the lower bound on the independence number of triangle-free graphs in terms of their average degree.
 
-Test
+## Main Statement
+
+If `G` is a triangle-free graph on `n` vertices with average degree `d`, then its independence number `α` satisfies `α ≥ n · F(d)`, where 
+
+## Reference 
+[J. B. Shearer, *A note on the independence number of triangle-free graphs*, Discrete Mathematics 46 (1983) 83-87] [shearer1983]
