@@ -8,13 +8,7 @@ If $G$ is a triangle-free graph on $n$ vertices with average degree $d$, then it
 
 $$\alpha \geq n \cdot F(d),$$
 
-where 
-
-$$F(x) = \begin{cases}
-\frac{x \cdot \log\ x - x + 1}{(x - 1)^2} & \text{if } x \neq 1 \\
-\frac{1}{2} & \text{if } x = 1.
-\end{cases}
-$$
+where $F(x) = \frac{x \cdot \log\ x - x + 1}{(x - 1)^2}$ with $F(1) = 1/2$.
 
 ## Project Structure
 
