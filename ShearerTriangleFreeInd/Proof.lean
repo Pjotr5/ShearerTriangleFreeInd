@@ -13,7 +13,7 @@ This file proves Shearer's theorem on the independence number of triangle-free g
 
 We prove that if `G` is a triangle-free graph on `n` vertices with average degree `d`,
 then its independence number `α` satisfies `α ≥ n · F(d)` where `F` is the Shearer function
-defined by `F(x) = (x ln x - x + 1) / (x - 1)²` for `x ≠ 1` and `F(1) = 1/2`.
+defined by `F(x) = (x log x - x + 1) / (x - 1)²` for `x ≠ 1` and `F(1) = 1/2`.
 
 In this file the theorem is called `triangle_free_independence_bound`.
 

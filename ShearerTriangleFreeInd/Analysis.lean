@@ -27,12 +27,13 @@ The main result is that `F` is convex on `(0, ∞)`.
 * `F_convex` : The function `F` is convex on `(0, ∞)`
 * `F_convex_inequality` : For `0 ≤ x` and `0 < y`, we have `F x ≥ F y + F' y * (x - y)`
 * `F'_nonpositive` : For `0 < x`, we have `F' x ≤ 0`
-* `diff_equation_F` : The funxtion `F` satisfies `1 + (x - x^2) * F' x - (x + 1) * F x = 0`.
+* `F_diff_equation` : The funxtion `F` satisfies `1 + (x - x^2) * F' x - (x + 1) * F x = 0`.
 
 ## Implementation notes
 
-The main challenge is handling the removable singularity at `x = 1`. We use L'Hôpital's rule
-in the form of `repeated_lhopital_list` to show continuity and differentiability at this point.
+The proof goes by defining `F'` and `F''` explicitly, showing that they are the first and second
+derivative of `F`, and proving (using the explicit form of `F''`) that `F''` is nonnegative and thus
+`F` convex.
 
 ## Technical notes
 
