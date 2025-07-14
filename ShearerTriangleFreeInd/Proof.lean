@@ -183,7 +183,7 @@ lemma V_empty_edgeFinset_card_zero (hV : IsEmpty V) : #G.edgeFinset = 0 := by
   simp only [Set.toFinset_card, Fintype.card_eq_zero]
 
 variable (G) (v) in
-theorem alpha_in_rel : (puncture G v).indepNum + 1 ≤ G.indepNum:= by
+theorem indepNum_puncture_succ_le : (puncture G v).indepNum + 1 ≤ G.indepNum:= by
   have ⟨S,hS⟩ := exists_isNIndepSet_indepNum (G := (puncture G v))
   have hS_coe : (S.map φ : Set V) ⊆ G.exterior v := map_subtype_subset _
   convert IsIndepSet.card_le_indepNum (t := insert v (S.map φ)) ?_
@@ -383,7 +383,7 @@ theorem triangle_free_independence_bound (hT : G.CliqueFree 3)
   by_cases hV : Nonempty V
   · have ⟨v, hv⟩ := exists_good_vertex hV hT
     rw [←hcard] at hv
-    refine ge_trans (ge_trans (Nat.cast_le.mpr (alpha_in_rel G v)) ?_) hv
+    refine ge_trans (ge_trans (Nat.cast_le.mpr (indepNum_puncture_succ_le G v)) ?_) hv
     specialize hn _ (by convert puncture_verts_card_lt (G := G) (v := v)) rfl
       (CliqueFree.comap φG hT)
     rw [puncture_verts_card, ←hcard, ge_iff_le, ←(add_le_add_iff_right (a :=1))] at hn
