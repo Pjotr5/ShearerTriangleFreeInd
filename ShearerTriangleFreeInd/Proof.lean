@@ -9,9 +9,9 @@ import ShearerTriangleFreeInd.Analysis
 /-!
 # The Independence Number of Triangle-Free Graphs
 
-This file proves Shearer's theorem on the independence number of triangle-free graphs.
+This file proves Shearer's theorem on the independence number of triangle-free graphs:
 
-We prove that if `G` is a triangle-free graph on `n` vertices with average degree `d`,
+If `G` is a triangle-free graph on `n` vertices with average degree `d`,
 then its independence number `α` satisfies `α ≥ n · F(d)` where `F` is the Shearer function
 defined by `F(x) = (x log x - x + 1) / (x - 1)²` for `x ≠ 1` and `F(1) = 1/2`.
 
@@ -36,9 +36,8 @@ part was proving the convexity of `F`. This is done in the companion file `Analy
 -/
 
 
-open Finset SimpleGraph
+open Finset SimpleGraph BigOperators
 open Classical
-open BigOperators
 
 
 namespace SimpleGraph
@@ -59,17 +58,19 @@ def exterior (G : SimpleGraph V) (v : V) := (G.closedNeighborSet v)ᶜ
 def puncture (G : SimpleGraph V) (v : V) := G.induce (G.exterior v)
 
 /-!
-  ## For coercions.
+### For coercions.
 -/
 
-def φ {G : SimpleGraph V} {v : V} : G.exterior v ↪ V  := Function.Embedding.subtype _
-def φG {G : SimpleGraph V} {v : V} : G.puncture v ↪g G := Embedding.induce _
+def exteriorEmbedding {G : SimpleGraph V} {v : V} : G.exterior v ↪ V  :=
+  Function.Embedding.subtype _
+def punctureEmbedding {G : SimpleGraph V} {v : V} : G.puncture v ↪g G :=
+  Embedding.induce _
 
 lemma finset_coe_subtype {G : SimpleGraph V} {v : V} (S : Finset (G.exterior v)) :
-    (S.map φ : Set V)  = Subtype.val '' (S : Set (G.exterior v)) := coe_map _ _
+    (S.map exteriorEmbedding : Set V)  = Subtype.val '' (S : Set (G.exterior v)) := coe_map _ _
 
 /-!
-## Basic lemmas about G.puncture v without assuming finiteness of V
+### Basic lemmas about G.puncture v without assuming finiteness of V
 -/
 
 variable {G : SimpleGraph V} {v : V}
@@ -85,7 +86,7 @@ lemma not_adj_of_mem_exterior {w : V} (hw : w ∈ G.exterior v) : ¬ G.Adj v w :
   fun hvw ↦ hw (adj_mem_closedNeighborSet hvw)
 
 lemma not_mem_image_edge_of_neighbor (e : Sym2 (G.exterior v)) :
-    ∀ u, u ∈ G.neighborSet v → u ∉ (φ.sym2Map e) := by
+    ∀ u, u ∈ G.neighborSet v → u ∉ (exteriorEmbedding.sym2Map e) := by
   intro _ hu hue
   have ⟨u, _, hueq⟩ := Sym2.mem_map.1 hue
   exact not_adj_of_mem_exterior (by rw [←hueq]; exact Subtype.coe_prop u) hu
@@ -101,32 +102,29 @@ lemma mem_exterior_of_mem_edge_disjoint_neighbors {e : Sym2 V} (he : e ∈ G.edg
 
 lemma exists_preimage_of_edge_disjoint_neighbors {e : Sym2 V}
     (he : e ∈ G.edgeSet) (hu_not : ∀ u, u ∈ G.neighborSet v → u ∉ e)
-    : ∃ e' ∈ (G.puncture v).edgeSet, (φ.sym2Map e') = e := by
-  have he_eq : φ.sym2Map (e.attachWith (mem_exterior_of_mem_edge_disjoint_neighbors he hu_not)) = e
+    : ∃ e' ∈ (G.puncture v).edgeSet, (exteriorEmbedding.sym2Map e') = e := by
+  have he_eq : exteriorEmbedding.sym2Map
+    (e.attachWith (mem_exterior_of_mem_edge_disjoint_neighbors he hu_not)) = e
     := Sym2.attachWith_map_subtypeVal _
   rw [←he_eq] at he
-  exact ⟨_, ⟨(Embedding.map_mem_edgeSet_iff φG).mp he, he_eq⟩⟩
+  exact ⟨_, ⟨(Embedding.map_mem_edgeSet_iff punctureEmbedding).mp he, he_eq⟩⟩
 
 variable (G) (v) in
-lemma puncture_edgeSet_image_eq : φ.sym2Map '' (G.puncture v).edgeSet =
+lemma puncture_edgeSet_image_eq : exteriorEmbedding.sym2Map '' (G.puncture v).edgeSet =
     G.edgeSet \ ⋃ u ∈ (G.neighborSet v), (G.incidenceSet u) := by
   ext e
   rw [Set.mem_diff, Set.mem_iUnion]
   constructor
   · intro ⟨_, he', he_eq⟩
     rw [←he_eq]
-    exact ⟨(Embedding.map_mem_edgeSet_iff φG).mpr he',
+    exact ⟨(Embedding.map_mem_edgeSet_iff punctureEmbedding).mpr he',
       fun ⟨_, _, ⟨huv, ht⟩, hue⟩ ↦
         (by rw [←ht] at hue; exact not_mem_image_edge_of_neighbor _ _ huv hue.2)⟩
   · exact fun ⟨he, he_not⟩ ↦ (Set.mem_image _ _ _).2
       (exists_preimage_of_edge_disjoint_neighbors he
       fun u hu hue ↦ he_not ⟨u, Set.mem_iUnion.2 ⟨hu, ⟨he, hue⟩⟩⟩)
 
-/-!
-## Two general lemmas
--/
-
-lemma neighborSet_pairwiseDisjoint_incidenceSet (hT : G.CliqueFree 3) :
+lemma triangle_free_neighbors_pairwise_disjoint_incidenceSet (hT : G.CliqueFree 3) :
     (G.neighborSet v).PairwiseDisjoint (fun u ↦ G.incidenceSet u) := by
   rw [Set.pairwiseDisjoint_iff]
   intro u hu w hw ⟨e, ⟨heu, hew⟩⟩
@@ -163,30 +161,27 @@ lemma puncture_verts_toFinset : (G.exterior v).toFinset = univ \ G.closedNeighbo
 lemma closedNeighborFinset_card : #(G.closedNeighborFinset v) = G.degree v + 1 :=
   card_insert_of_notMem (notMem_neighborFinset_self _ _)
 
-lemma V_card_ge_deg_plus_one : Fintype.card V ≥ G.degree v + 1 := by
+lemma card_le_degree_succ : Fintype.card V ≥ G.degree v + 1 := by
   rw [←closedNeighborFinset_card]
   exact card_le_univ _
 
-lemma puncture_verts_card : Fintype.card (G.exterior v) = Fintype.card V - (G.degree v + 1) := by
+lemma card_exterior_eq : Fintype.card (G.exterior v) = Fintype.card V - (G.degree v + 1) := by
   rw [←Set.toFinset_card, puncture_verts_toFinset, card_univ_diff, closedNeighborFinset_card]
 
-lemma puncture_verts_card_rat :
+lemma card_exterior_eq_rat :
   (Fintype.card (G.exterior v) : ℚ) = Fintype.card V - (G.degree v + 1) := by
-  rw [puncture_verts_card (G := G) (v := v), Nat.cast_sub V_card_ge_deg_plus_one,
+  rw [card_exterior_eq (G := G) (v := v), Nat.cast_sub card_le_degree_succ,
   Nat.cast_add, Nat.cast_one]
 
-lemma puncture_verts_card_lt : Fintype.card (G.exterior v) < Fintype.card V := by
-  rw [puncture_verts_card, tsub_lt_self_iff, Fintype.card_pos_iff, add_pos_iff]
+lemma card_exterior_eq_lt : Fintype.card (G.exterior v) < Fintype.card V := by
+  rw [card_exterior_eq, tsub_lt_self_iff, Fintype.card_pos_iff, add_pos_iff]
   exact ⟨Nonempty.intro v, Or.inr Nat.one_pos⟩
-
-lemma V_empty_edgeFinset_card_zero (hV : IsEmpty V) : #G.edgeFinset = 0 := by
-  simp only [Set.toFinset_card, Fintype.card_eq_zero]
 
 variable (G) (v) in
 theorem indepNum_puncture_succ_le : (puncture G v).indepNum + 1 ≤ G.indepNum:= by
   have ⟨S,hS⟩ := exists_isNIndepSet_indepNum (G := (puncture G v))
-  have hS_coe : (S.map φ : Set V) ⊆ G.exterior v := map_subtype_subset _
-  convert IsIndepSet.card_le_indepNum (t := insert v (S.map φ)) ?_
+  have hS_coe : (S.map exteriorEmbedding : Set V) ⊆ G.exterior v := map_subtype_subset _
+  convert IsIndepSet.card_le_indepNum (t := insert v (S.map exteriorEmbedding)) ?_
   · rw [←hS.2, card_insert_of_notMem (fun h ↦ not_mem_exterior_self (hS_coe h)), card_map]
   · rw [coe_insert, isIndepSet_insert]
     refine ⟨?_, (fun _ hu _  ↦ (not_adj_of_mem_exterior (hS_coe hu)))⟩
@@ -226,15 +221,15 @@ lemma neighborFinset_coe : (G.neighborFinset v : Set V) = G.neighborSet v := by 
 lemma incidenceFinset_coe : (G.incidenceFinset v : Set (Sym2 V)) = G.incidenceSet v :=
   by ext _; simp
 
-lemma triangleFree_neighbors_disjoint_incidenceFinset (hT : G.CliqueFree 3) :
+lemma triangle_free_neighbors_pairwise_disjoint_incidenceFinset (hT : G.CliqueFree 3) :
     (G.neighborSet v).PairwiseDisjoint (fun u ↦ G.incidenceFinset u) := by
-  have this := neighborSet_pairwiseDisjoint_incidenceSet (v := v) hT
+  have this := triangle_free_neighbors_pairwise_disjoint_incidenceSet (v := v) hT
   rw [Set.pairwiseDisjoint_iff, pairwiseDisjoint_iff] at *
   exact fun u hu w hw ⟨e, he⟩ ↦
     (this hu hw ⟨e, by rwa [mem_inter, mem_incidenceFinset, mem_incidenceFinset] at he⟩)
 
 variable (G) (v) in
-lemma puncture_edgeFinset_map_eq : map φ.sym2Map (G.puncture v).edgeFinset =
+lemma puncture_edgeFinset_map_eq : map exteriorEmbedding.sym2Map (G.puncture v).edgeFinset =
     G.edgeFinset \ Finset.biUnion (G.neighborFinset v) (fun u ↦ (G.incidenceFinset u)) := by
   rw [←coe_inj]; convert puncture_edgeSet_image_eq G v <;> simp
 
@@ -252,7 +247,7 @@ lemma puncture_edge_card (hT : G.CliqueFree 3) : (#(G.puncture v).edgeFinset : �
       Nat.cast_sub (card_le_card neighborhood_incidenceFinset_sub), ←Nat.cast_sum, card_biUnion ?_]
     · simp
     · rw [neighborFinset_coe]
-      exact triangleFree_neighbors_disjoint_incidenceFinset hT
+      exact triangle_free_neighbors_pairwise_disjoint_incidenceFinset hT
 
 lemma expect_sum_degree_neighbors :
     𝔼 v, ∑ u ∈ G.neighborFinset v, (G.degree u : ℚ) = 𝔼 v, (G.degree v : ℚ)^2 := by
@@ -313,11 +308,11 @@ lemma averageDegree_square_bound : G.averageDegree ^ 2 ≤ 𝔼 v, (G.degree v :
 ### Proof of the main statement
 -/
 
+/- `le` version of `exists_lt_of_lt_expect`-/
 lemma exists_ge_of_le_expect {a : ℝ} {g : V → ℝ} (h_nonempty : Nonempty V) (h : a ≤ 𝔼 i, g i)
   : ∃ x, a ≤ g x := by
   have ⟨x, _, h_all⟩ := exists_max_image (s := univ) (f := g) (univ_nonempty_iff.mpr h_nonempty)
   exact ⟨x, le_trans h (expect_le (univ_nonempty_iff.mpr h_nonempty) h_all)⟩
-
 
 lemma exists_good_vertex (h_nonempty : Nonempty V) (hT : CliqueFree G 3) :
     ∃ v, (Fintype.card V) * (F G.averageDegree)
@@ -351,7 +346,7 @@ lemma exists_good_vertex (h_nonempty : Nonempty V) (hT : CliqueFree G 3) :
         intro v
         rw [(by simp : 2 * (#((G.puncture v).edgeFinset) : ℝ)
           = (2 * #((G.puncture v).edgeFinset) : ℚ)),
-          ←card_mul_averageDegree_eq_twice_card_edges, puncture_verts_card_rat]
+          ←card_mul_averageDegree_eq_twice_card_edges, card_exterior_eq_rat]
         simp_all
       conv => rhs; rhs; rhs; rhs; intro v; rw [h_rw]
       rw [←mul_expect, expect_puncture_edgeFinset_card_real hT, mul_sub, mul_sub,
@@ -368,7 +363,7 @@ lemma exists_good_vertex (h_nonempty : Nonempty V) (hT : CliqueFree G 3) :
       rw [add_le_add_iff_left]
       apply mul_le_mul_of_nonneg_left
       · exact F_convex_inequality (Rat.cast_nonneg.mpr averageDegree_nonneg) hd_pos
-      · convert sub_nonneg.2 (Nat.cast_le (α := ℝ).2 (V_card_ge_deg_plus_one (G := G) (v := v)))
+      · convert sub_nonneg.2 (Nat.cast_le (α := ℝ).2 (card_le_degree_succ (G := G) (v := v)))
         rw [Nat.cast_add, Nat.cast_one]
 
 /-- **Shearer's Theorem** [shearer1983]: The independence number of a triangle-free graph on
@@ -384,12 +379,12 @@ theorem triangle_free_independence_bound (hT : G.CliqueFree 3)
   · have ⟨v, hv⟩ := exists_good_vertex hV hT
     rw [←hcard] at hv
     refine ge_trans (ge_trans (Nat.cast_le.mpr (indepNum_puncture_succ_le G v)) ?_) hv
-    specialize hn _ (by convert puncture_verts_card_lt (G := G) (v := v)) rfl
-      (CliqueFree.comap φG hT)
-    rw [puncture_verts_card, ←hcard, ge_iff_le, ←(add_le_add_iff_right (a :=1))] at hn
+    specialize hn _ (by convert card_exterior_eq_lt (G := G) (v := v)) rfl
+      (CliqueFree.comap punctureEmbedding hT)
+    rw [card_exterior_eq, ←hcard, ge_iff_le, ←(add_le_add_iff_right (a :=1))] at hn
     convert hn using 1
     · rw [←sub_eq_zero]
-      simp only [hcard, Nat.cast_sub V_card_ge_deg_plus_one, Nat.cast_add, Nat.cast_one]
+      simp only [hcard, Nat.cast_sub card_le_degree_succ, Nat.cast_add, Nat.cast_one]
       ring
     · simp
   · simp_all
