@@ -17,32 +17,26 @@ The two main statements can be found in the file `ShearerTriangleFreeInd/Main.le
 
   where
 
-  $$
-  F(x) =
+  $$F(x) =
   \begin{cases}
     \tfrac12, & x = 1,\\[0.4em]
     \dfrac{x \log x - x + 1}{(x - 1)^2}, & x \neq 1.
-  \end{cases}
-  $$
+  \end{cases}$$
 
 - **Independent set count.**  
   If $G$ is a triangle-free graph on $n$ vertices with average degree $d$, then
   the number of independent sets satisfies
 
-  $$
-  \lvert \mathcal{I}(G) \rvert \geq \exp\bigl(n \cdot G(d)\bigr),
-  $$
+  $$\lvert \mathcal{I}(G) \rvert \geq \exp\bigl(n \cdot G(d)\bigr),$$
 
   where $W$ is the principal branch of the Lambert $W$ function and
 
-  $$
-  G(x) =
+  $$G(x) =
   \begin{cases}
     e^{-W(2)}, & x = 2,\\[0.4em]
     \dfrac{\tfrac12 W(x)^2 + W(x) - \bigl(\tfrac12 W(2)^2 + W(2)\bigr)}{x - 2},
       & x \neq 2.
-  \end{cases}
-  $$
+  \end{cases}$$
 
 ## Project Structure
 
