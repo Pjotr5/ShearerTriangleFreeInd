@@ -15,7 +15,7 @@ The two main statements can be found in the file `ShearerTriangleFreeInd/Main.le
 
   $$\alpha \geq n \cdot F(d)$$
 
-  where $F(x) = (x \cdot \log x - x + 1)/(x - 1)^2$ with $F(1) = 1/2$.
+  where $F(x) = (x \cdot \log\ x - x + 1)/(x - 1)^2$ with $F(1) = 1/2$.
 
 - **Independent set count.**  
   If $G$ is a triangle-free graph on $n$ vertices with average degree $d$, then
@@ -23,7 +23,7 @@ The two main statements can be found in the file `ShearerTriangleFreeInd/Main.le
 
   $$\lvert \mathcal{I}(G) \rvert \geq \exp\bigl(n \cdot H(d)\bigr),$$
 
-  where $H(x) = (\tfrac12 W(x)^2 + W(x) - \bigl(\tfrac12 W(2)^2 + W(2)\bigr))/(x - 2)$  
+  where $H(x) = \left(\tfrac12 W(x)^2 + W(x) - (\tfrac12 W(2)^2 + W(2))\right)/(x - 2)$,
   with $H(2) = e^{-W(2)}$, where $W$ denotes the main branch Lambert W function.
 
 ## Project Structure
