@@ -7,15 +7,18 @@ sets from [BvdHK2025].
 
 ## Main Statements
 
-Both following statements can be found in the file `ShearerTriangleFreeInd/Main.lean`.
+The two main statements can be found in the file `ShearerTriangleFreeInd/Main.lean`.
 
 - **Independence number.**  
   If $G$ is a triangle-free graph on $n$ vertices with average degree $d$, then
   its independence number $\alpha$ satisfies
+
   $$
-  \alpha \geq n \cdot f(d),
+  \alpha \geq n \cdot F(d)
   $$
+
   where
+
   $$
   F(x) =
   \begin{cases}
@@ -27,10 +30,13 @@ Both following statements can be found in the file `ShearerTriangleFreeInd/Main.
 - **Independent set count.**  
   If $G$ is a triangle-free graph on $n$ vertices with average degree $d$, then
   the number of independent sets satisfies
+
   $$
   \lvert \mathcal{I}(G) \rvert \geq \exp\bigl(n \cdot G(d)\bigr),
   $$
+
   where $W$ is the principal branch of the Lambert $W$ function and
+
   $$
   G(x) =
   \begin{cases}
@@ -45,11 +51,11 @@ Both following statements can be found in the file `ShearerTriangleFreeInd/Main.
 - `ShearerTriangleFreeInd/Analysis.lean` – Properties of the Shearer function
   `F`, including convexity and auxiliary calculus lemmas.
 - `ShearerTriangleFreeInd/Analysis_W.lean` – Construction and analysis of the
-  Lambert $W$ function needed for the counting bound and analysis of the above function 
+  Lambert $W$ function needed for the counting bound, and analysis of the above function 
   `G`.
 - `ShearerTriangleFreeInd/Proofs.lean` – Core combinatorial lemmas and the
   proofs of both bounds.
-- `ShearerTriangleFreeInd/Main.lean` – A file only containing the two main statements.
+- `ShearerTriangleFreeInd/Main.lean` – Contains only the two main statements.
 
 ## References
 - [Shearer1983] J. B. Shearer, *A note on the independence number of
