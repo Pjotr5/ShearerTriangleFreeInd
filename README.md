@@ -45,7 +45,8 @@ Both following statements can be found in the file `ShearerTriangleFreeInd/Main.
 - `ShearerTriangleFreeInd/Analysis.lean` – Properties of the Shearer function
   `F`, including convexity and auxiliary calculus lemmas.
 - `ShearerTriangleFreeInd/Analysis_W.lean` – Construction and analysis of the
-  Lambert $W$ function needed for the counting bound.
+  Lambert $W$ function needed for the counting bound and analysis of the above function 
+  `G`.
 - `ShearerTriangleFreeInd/Proofs.lean` – Core combinatorial lemmas and the
   proofs of both bounds.
 - `ShearerTriangleFreeInd/Main.lean` – A file only containing the two main statements.
