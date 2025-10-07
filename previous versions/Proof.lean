@@ -5,6 +5,7 @@ Authors: Pjotr Buys
 
 import Mathlib
 import ShearerTriangleFreeInd.Analysis
+import ImportGraph.Imports
 
 /-!
 # The Independence Number of Triangle-Free Graphs
@@ -57,6 +58,8 @@ def exterior (G : SimpleGraph V) (v : V) := (G.closedNeighborSet v)ᶜ
 /-- The puncture of G at v is the induced subgraph on vertices outside v's closed neighborhood. -/
 def puncture (G : SimpleGraph V) (v : V) := G.induce (G.exterior v)
 
+
+
 /-!
 ### For coercions.
 -/
@@ -90,6 +93,13 @@ lemma not_mem_image_edge_of_neighbor (e : Sym2 (G.exterior v)) :
   intro _ hu hue
   have ⟨u, _, hueq⟩ := Sym2.mem_map.1 hue
   exact not_adj_of_mem_exterior (by rw [←hueq]; exact Subtype.coe_prop u) hu
+
+lemma mem_exterior_from_not_self_and_not_Adj {w : V} (hv : v ≠ w) (hAdj : ¬ G.Adj v w) :
+    w ∈ G.exterior v := by
+  intro h
+  rcases Set.mem_insert_iff.1 h with (h' | h')
+  · exact hv h'.symm
+  · exact hAdj h'
 
 lemma mem_exterior_of_mem_edge_disjoint_neighbors {e : Sym2 V} (he : e ∈ G.edgeSet)
     (hu_not : ∀ u, u ∈ G.neighborSet v → u ∉ e) : ∀ u ∈ e, u ∈ G.exterior v := by
@@ -144,7 +154,6 @@ lemma isIndepSet_insert {T : Set V}
 
 variable [Fintype V]
 
-noncomputable instance fintype_puncture : Fintype (G.exterior v) := Fintype.ofFinite _
 
 variable (G) (v) in
 noncomputable def closedNeighborFinset := insert v (G.neighborFinset v)
@@ -170,6 +179,11 @@ lemma card_exterior_eq : Fintype.card (G.exterior v) = Fintype.card V - (G.degre
 
 lemma card_exterior_eq_rat :
   (Fintype.card (G.exterior v) : ℚ) = Fintype.card V - (G.degree v + 1) := by
+  rw [card_exterior_eq (G := G) (v := v), Nat.cast_sub card_le_degree_succ,
+  Nat.cast_add, Nat.cast_one]
+
+lemma card_exterior_eq_real :
+  (Fintype.card (G.exterior v) : ℝ) = Fintype.card V - (G.degree v + 1) := by
   rw [card_exterior_eq (G := G) (v := v), Nat.cast_sub card_le_degree_succ,
   Nat.cast_add, Nat.cast_one]
 
@@ -201,6 +215,9 @@ noncomputable def averageDegree := 𝔼 v, (G.degree v : ℚ)
 
 lemma averageDegree_nonneg : 0 ≤ averageDegree G := expect_nonneg (fun _ _ ↦ Nat.cast_nonneg' _)
 
+lemma averageDegree_real : (𝔼 i, (G.degree i : ℝ)) = G.averageDegree :=
+  (algebraMap.coe_expect _ (M := ℚ) _).symm
+
 lemma averageDegree_eq_twice_card_edges_div_card :
   (averageDegree G) = 2 * #G.edgeFinset / (Fintype.card V : ℚ) := by
   convert Fintype.expect_eq_sum_div_card (fun v ↦ (G.degree v : ℚ))
@@ -214,6 +231,12 @@ lemma card_mul_averageDegree_eq_twice_card_edges :
     rw [Fintype.card_eq_zero_iff, isEmpty_iff] at h
     exact fun x _ ↦ h (x.out).1
   · field_simp
+
+lemma card_mul_averageDegree_eq_twice_card_edges_real :
+    Fintype.card V  * (averageDegree G) = 2 * (#G.edgeFinset : ℝ) := by
+  convert congrArg (Rat.cast (K := ℝ))
+      ((card_mul_averageDegree_eq_twice_card_edges (G := G))) <;>
+  simp_all only [Rat.cast_mul, Rat.cast_ofNat, Rat.cast_natCast]
 
 @[simp]
 lemma neighborFinset_coe : (G.neighborFinset v : Set V) = G.neighborSet v := by ext _; simp

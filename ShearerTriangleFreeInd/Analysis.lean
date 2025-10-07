@@ -3,7 +3,20 @@ Copyright (c) 2024 Pjotr Buys. All rights reserved.
 Authors: Pjotr Buys
 -/
 
-import Mathlib
+import Mathlib.Algebra.Lie.OfAssociative
+import Mathlib.Algebra.Order.Ring.Star
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.Analysis.Calculus.FDeriv.Extend
+import Mathlib.Analysis.Calculus.LHopital
+import Mathlib.Analysis.InnerProductSpace.Basic
+import Mathlib.Analysis.NormedSpace.Connected
+import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
+import Mathlib.Data.Int.Star
+import Mathlib.Data.Real.StarOrdered
+import Mathlib.GroupTheory.MonoidLocalization.Basic
+import Mathlib.Topology.Algebra.Module.ModuleTopology
+import Mathlib.Topology.GDelta.MetrizableSpace
+import ImportGraph.Imports
 
 /-!
 # Convexity of the Shearer function.
@@ -46,10 +59,6 @@ derivative of `F`, and proving (using the explicit form of `F''`) that `F''` is 
 open Set Filter
 
 variable {x y : ℝ} {f f' g g' : ℝ → ℝ} {U : Set ℝ}
-
-/-!
-### General lemmas not found in Mathlib
--/
 
 section General
 
@@ -257,6 +266,7 @@ lemma ContinuousAt.lhopital_iterated (n : ℕ) (ns ds : List (ℝ → ℝ))
       rw [List.length_tail, len_ns, add_tsub_cancel_right, Nat.add_left_cancel_iff]
     have hd_tail : ds.tail.length = n + 1 := by
       rw [List.length_tail, len_ds, add_tsub_cancel_right, Nat.add_left_cancel_iff]
+
     refine HasDerivAt.lhopital_zero_nhdsNE (f' := ns[1]) (g' := ds[1]) ?_ ?_ ?_ ?_ ?_ ?_
     · exact eventually_nhdsWithin_of_eventually_nhds (hnDer 0 hn)
     · exact eventually_nhdsWithin_of_eventually_nhds (hdDer 0 hn)
@@ -531,7 +541,7 @@ lemma hasDerivAt_nF''₃ (hx : 0 < x) : HasDerivAt nF''₃ (nF''₄ x) x := by
   · ring
 
 lemma hasDerivAt_dF''₀ : HasDerivAt dF''₀ (dF''₁ x) x := by
-  convert Polynomial.hasDerivAt (X (R := ℝ) - 4 * X^2 + 6 * X^3 - 4 * X^4 + X^5) _ <;> norm_num
+  convert Polynomial.hasDerivAt (X - 4 * X^2 + 6 * X^3 - 4 * X^4 + X^5 : ℝ[X]) _ <;> norm_num
   · unfold dF''₀; ring
   · unfold dF''₁; ring
 

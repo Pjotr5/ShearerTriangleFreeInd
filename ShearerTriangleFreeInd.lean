@@ -1,1 +1,1 @@
-import ShearerTriangleFreeInd.Basic
+import ShearerTriangleFreeInd.Main
