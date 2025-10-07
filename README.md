@@ -23,7 +23,7 @@ The two main statements can be found in the file `ShearerTriangleFreeInd/Main.le
 
   $$\lvert \mathcal{I}(G) \rvert \geq \exp\bigl(n \cdot H(d)\bigr),$$
 
-  where $H(x) = \left(\tfrac12 W(x)^2 + W(x) - (\tfrac12 W(2)^2 + W(2))\right)/(x - 2)$,
+  where $H(x) = (\tfrac12 W(x)^2 + W(x) - (\tfrac12 W(2)^2 + W(2)))/(x - 2)$,
   with $H(2) = e^{-W(2)}$, where $W$ denotes the main branch Lambert W function.
 
 ## Project Structure
