@@ -145,7 +145,7 @@ lemma eventually_nhds_self {p : ℝ → Prop} (h : ∀ᶠ (y : ℝ) in nhds x, p
   exact hall _ (Metric.mem_ball_self hε)
 
 -- Propagate zeros to derivatives
-lemma frequently_zero_of_deriv_zero
+lemma frequently_deriv_eq_zero_of_frequently_eq_zero
     (hx : g x = 0)
     (hDer : ∀ᶠ (y : ℝ) in nhds x, HasDerivAt g (g' y) y)
     (hgZero : ∃ᶠ (y : ℝ) in nhdsWithin x {x}ᶜ, g y = 0) :
@@ -189,17 +189,15 @@ lemma frequently_zero_of_deriv_zero
   · exact HasDerivAt.continuousOn (fun w hw  ↦ hVder _ (hsub hw).2)
   · exact (fun w hw  ↦ hVder _ (hsub (Set.Ioo_subset_Icc_self hw)).2)
 
+lemma ContinuousAt.eq_of_frequently_eq {g : ℝ → ℝ} {a x : ℝ}
+    (hZero : ∃ᶠ y in nhdsWithin x {x}ᶜ, g y = a)
+    (hCont : ContinuousAt g x) :
+    g x = a :=
+    (tendsto_nhds_unique_of_frequently_eq
+      (tendsto_nhdsWithin_of_tendsto_nhds hCont)
+      tendsto_const_nhds hZero)
 
--- Continuity determines value from frequent equality
-lemma ContinuousAt.eq_of_frequently_eq {a : ℝ} (hZero : ∃ᶠ (y : ℝ) in nhdsWithin x {x}ᶜ, g y = a)
-    (hCont : ContinuousAt g x) : g x = a := by
-  by_contra hxna
-  have ⟨δ, hδpos, hδ⟩ := Metric.continuousAt_iff.1 hCont _ (abs_sub_pos.mpr hxna)
-  rw [frequently_nhdsWithin_iff, frequently_nhds_iff] at hZero
-  have ⟨y, hUy, hy, hynx⟩ :=  hZero _ (Metric.mem_ball_self hδpos) Metric.isOpen_ball
-  specialize hδ hUy
-  rw [hy, abs_sub_comm] at hδ
-  exact (lt_self_iff_false _).1 hδ
+
 
 lemma ConvexOn.tangent_line_le (hgc : ConvexOn ℝ U g) (hx : x ∈ U) (hy : y ∈ U)
   (hg' : HasDerivAt g (g' y) y) : g y + g' y * (x - y) ≤ g x := by
@@ -266,7 +264,6 @@ lemma ContinuousAt.lhopital_iterated (n : ℕ) (ns ds : List (ℝ → ℝ))
       rw [List.length_tail, len_ns, add_tsub_cancel_right, Nat.add_left_cancel_iff]
     have hd_tail : ds.tail.length = n + 1 := by
       rw [List.length_tail, len_ds, add_tsub_cancel_right, Nat.add_left_cancel_iff]
-
     refine HasDerivAt.lhopital_zero_nhdsNE (f' := ns[1]) (g' := ds[1]) ?_ ?_ ?_ ?_ ?_ ?_
     · exact eventually_nhdsWithin_of_eventually_nhds (hnDer 0 hn)
     · exact eventually_nhdsWithin_of_eventually_nhds (hdDer 0 hn)
@@ -276,7 +273,7 @@ lemma ContinuousAt.lhopital_iterated (n : ℕ) (ns ds : List (ℝ → ℝ))
         intro k
         induction' k with _ ih
         · exact fun _ ↦ hcontra
-        · exact fun _ ↦ frequently_zero_of_deriv_zero (hdZero _ (by linarith))
+        · exact fun _ ↦ frequently_deriv_eq_zero_of_frequently_eq_zero (hdZero _ (by linarith))
               (hdDer _ (by linarith)) (ih (by linarith))
       specialize hInd n (by linarith)
       exact hnZ (ContinuousAt.eq_of_frequently_eq hInd hdC)
