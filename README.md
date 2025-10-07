@@ -2,10 +2,12 @@
 
 A Lean 4 formalisation of two bounds for triangle-free graphs:
 the classical lower bound on the independence number due to Shearer
-[Shearer1983], and the recent lower bound on the total number of independent
+[Shearer1983], and our recent lower bound on the total number of independent
 sets from [BvdHK2025].
 
 ## Main Statements
+
+Both following statements can be found in the file `ShearerTriangleFreeInd/Main.lean`.
 
 - **Independence number.**  
   If $G$ is a triangle-free graph on $n$ vertices with average degree $d$, then
@@ -15,7 +17,7 @@ sets from [BvdHK2025].
   $$
   where
   $$
-  f(x) =
+  F(x) =
   \begin{cases}
     \tfrac12, & x = 1,\\[0.4em]
     \dfrac{x \log x - x + 1}{(x - 1)^2}, & x \neq 1.
@@ -46,9 +48,7 @@ sets from [BvdHK2025].
   Lambert $W$ function needed for the counting bound.
 - `ShearerTriangleFreeInd/Proofs.lean` – Core combinatorial lemmas and the
   proofs of both bounds.
-- `ShearerTriangleFreeInd/Main.lean` – Small wrappers exposing the formal
-  statements as Lean theorems.
-- `ShearerTriangleFreeInd.lean` – Entry point re-exporting `Main`.
+- `ShearerTriangleFreeInd/Main.lean` – A file only containing the two main statements.
 
 ## References
 - [Shearer1983] J. B. Shearer, *A note on the independence number of
