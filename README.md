@@ -13,9 +13,7 @@ The two main statements can be found in the file `ShearerTriangleFreeInd/Main.le
   If $G$ is a triangle-free graph on $n$ vertices with average degree $d$, then
   its independence number $\alpha$ satisfies
 
-  $$
-  \alpha \geq n \cdot F(d)
-  $$
+  $$\alpha \geq n \cdot F(d)$$
 
   where
 
