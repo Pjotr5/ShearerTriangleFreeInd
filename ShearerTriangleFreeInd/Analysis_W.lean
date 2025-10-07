@@ -58,6 +58,12 @@ lemma xexp_surjective (hx : xexp (-1) ≤ x) : ∃ y, -1 ≤ y ∧ xexp y = x :=
 
 lemma xexp_InjOn : Set.InjOn xexp (Set.Ici (-1)) := StrictMonoOn.injOn StrictMonoOn_xexp
 
+--StrictMonoOn.orderIso
+
+-- noncomputable def xexpOrderIso' : Set.Ici (-1 : ℝ) ≃o Set.Ici (xexp (-1)) := by
+--   convert StrictMonoOn.orderIso _ _ StrictMonoOn_xexp
+--   sorry
+
 noncomputable def xexpOrderIso : Set.Ici (-1 : ℝ) ≃o Set.Ici (xexp (-1)) := by
   refine StrictMono.orderIsoOfSurjective (fun x ↦ ⟨xexp x, xexp_le x.2⟩) ?_ ?_
   · apply StrictMono.codRestrict
@@ -80,7 +86,7 @@ lemma W_rw (hx : xexp (-1) ≤ x) : W x = xexpOrderIso.symm ⟨x, hx⟩ := dif_p
 
 lemma W_EqOn : Set.EqOn (α := Set.Ici (xexp (-1))) (fun x ↦ W x.1) (fun x ↦ xexpOrderIso.symm x)
   Set.univ := by
-  intro x _f
+  intro x _
   simp [W_rw x.2]
 
 lemma neg_one_le_W (hx : xexp (-1) ≤ x) : -1 ≤ W x := by
@@ -236,6 +242,10 @@ lemma hasDerivAt_W₀ {x : ℝ} (hx : x ∈ Di) : HasDerivAt W (W' x) x := by
 
 lemma W_eq_self_mul_P (hx : x ∈ D) : W x = x * P x := W_eq_x_mul_exp_neg_W hx
 
+-- lemma P_eq_on_nonzero (hx : x ∈ D) (hx₀ : x ≠ 0) : P x = W x / x := by
+--   rw [W_eq_self_mul_P hx]
+--   exact (mul_div_cancel_left₀ _ hx₀).symm
+
 lemma continuousOn_P : ContinuousOn P D := by
   unfold P
   exact Continuous.comp_continuousOn' continuous_exp (ContinuousOn.neg (continuousOn_W))
@@ -247,6 +257,12 @@ lemma hasDerivAt_P (hx : x ∈ Di) : HasDerivAt P (P' x) x := by
 
 lemma continuousAt_P (hx : x ∈ Di) : ContinuousAt P x :=
   HasDerivAt.continuousAt (hasDerivAt_P hx)
+
+-- lemma P'_continuousAt (hx : x ∈ Di) : ContinuousAt P' x := by
+--   refine ContinuousAt.mul (ContinuousAt.neg (ContinuousAt.div₀ ?_ ?_ ?_)) (continuousAt_P hx)
+--   · exact continuousAt_P hx
+--   · exact ContinuousAt.add (continuousAt_W hx) continuousAt_const
+--   · exact W_add_one_nonzero hx
 
 lemma hasDerivAt_W' (hx : x ∈ Di) : HasDerivAt W' (W'' x) x := by
   convert HasDerivAt.div (hasDerivAt_P hx) (HasDerivAt.add_const 1 (hasDerivAt_W₀ hx))
@@ -310,6 +326,14 @@ lemma image_affine_uIcc (a b c d : ℝ) :
 
 lemma affine_continuous (a b : ℝ) : Continuous (a * · + b) :=
   Continuous.add (continuous_mul_left _) continuous_const
+
+-- Probably not necessary.
+lemma uIcc_convexHull (a b : ℝ) : convexHull ℝ {a, b} = Set.uIcc a b :=
+  Set.Subset.antisymm (convexHull_min
+    (Set.pair_subset (Set.left_mem_uIcc) (Set.right_mem_uIcc)) (convex_uIcc _ _))
+    (Set.OrdConnected.uIcc_subset (Convex.ordConnected (convex_convexHull _ _))
+    (mem_convexHull_iff.mpr (fun _ h _ ↦ h (Set.mem_insert _ _)))
+    (mem_convexHull_iff.mpr (fun _ h _ ↦ h (Set.mem_insert_of_mem _ rfl))))
 
 lemma uIcc_sub_connected {a b : ℝ} {U : Set ℝ} (hU : IsConnected U) (ha : a ∈ U) (hb : b ∈ U) :
     Set.uIcc a b ⊆ U :=
@@ -501,6 +525,7 @@ lemma G_convexOn : ConvexOn ℝ Di G :=
 lemma G_continuousOn : ContinuousOn G Di :=
   ConvexOn.continuousOn isOpen_Ioi G_convexOn
 
+
 lemma nG_hasDerivAt (hx : x ∈ Di) : HasDerivAt nG (P x) x :=
   HasDerivAt.add_const _ (HasDerivAt_P_prim hx)
 
@@ -520,9 +545,11 @@ lemma dnG'_hasDerivAt (hx : x ∈ Di) : HasDerivAt dnG' (ddnG' x) x := by
   unfold ddnG'
   ring
 
+
 lemma ddnG'_continuousAt (hx : x ∈ Di) : ContinuousAt ddnG' x :=
   ContinuousAt.add (ContinuousAt.mul (continuousAt_P'' hx)
   (Continuous.continuousAt (continuous_add_right (-2)))) (continuousAt_P' hx)
+
 
 lemma pos_of_dist_two_lt_two {x : ℝ} (hx : dist x 2 < 2) : 0 < x := by
   rw [Real.dist_eq, abs_sub_lt_iff] at hx

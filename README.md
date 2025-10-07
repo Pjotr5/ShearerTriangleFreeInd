@@ -1,20 +1,56 @@
-# Shearer's Theorem on Triangle-Free Graphs
+# Bounds for Triangle-Free Graphs
 
-A formal proof in Lean 4 of Shearer's theorem [shearer1983] on the lower bound on the independence number of triangle-free graphs in terms of their average degree.
+A Lean 4 formalisation of two bounds for triangle-free graphs:
+the classical lower bound on the independence number due to Shearer
+[Shearer1983], and the recent lower bound on the total number of independent
+sets from [BvdHK2025].
 
-## Main Statement
+## Main Statements
 
-If $G$ is a triangle-free graph on $n$ vertices with average degree $d$, then its independence number $\alpha$ satisfies 
+- **Independence number.**  
+  If $G$ is a triangle-free graph on $n$ vertices with average degree $d$, then
+  its independence number $\alpha$ satisfies
+  $$
+  \alpha \geq n \cdot f(d),
+  $$
+  where
+  $$
+  f(x) =
+  \begin{cases}
+    \tfrac12, & x = 1,\\[0.4em]
+    \dfrac{x \log x - x + 1}{(x - 1)^2}, & x \neq 1.
+  \end{cases}
+  $$
 
-$$\alpha \geq n \cdot F(d),$$
-
-where $F(x) = (x \cdot \log\ x - x + 1)/(x - 1)^2$ with $F(1) = 1/2$.
+- **Independent set count.**  
+  If $G$ is a triangle-free graph on $n$ vertices with average degree $d$, then
+  the number of independent sets satisfies
+  $$
+  \lvert \mathcal{I}(G) \rvert \geq \exp\bigl(n \cdot G(d)\bigr),
+  $$
+  where $W$ is the principal branch of the Lambert $W$ function and
+  $$
+  G(x) =
+  \begin{cases}
+    e^{-W(2)}, & x = 2,\\[0.4em]
+    \dfrac{\tfrac12 W(x)^2 + W(x) - \bigl(\tfrac12 W(2)^2 + W(2)\bigr)}{x - 2},
+      & x \neq 2.
+  \end{cases}
+  $$
 
 ## Project Structure
 
-- `ShearerTriangleFreeInd/Analysis.lean` - Analysis of the Shearer function `F`, proving convexity via nonnegativity of the second derivative.
+- `ShearerTriangleFreeInd/Analysis.lean` – Properties of the Shearer function
+  `F`, including convexity and auxiliary calculus lemmas.
+- `ShearerTriangleFreeInd/Analysis_W.lean` – Construction and analysis of the
+  Lambert $W$ function needed for the counting bound.
+- `ShearerTriangleFreeInd/Proofs.lean` – Core combinatorial lemmas and the
+  proofs of both bounds.
+- `ShearerTriangleFreeInd/Main.lean` – Small wrappers exposing the formal
+  statements as Lean theorems.
+- `ShearerTriangleFreeInd.lean` – Entry point re-exporting `Main`.
 
-- `ShearerTriangleFreeInd/Proof.lean` - Proof of Theorem 1 from [shearer1983], following Shearer's original argument.
-
-## Reference 
-[J. B. Shearer, *A note on the independence number of triangle-free graphs*, Discrete Mathematics 46 (1983) 83-87] [shearer1983]
+## References
+- [Shearer1983] J. B. Shearer, *A note on the independence number of
+  triangle-free graphs*, Discrete Mathematics 46 (1983), 83–87.
+- [BvdHK2025] Pjotr Buys, Jan van den Heuvel, Ross J. Kang, *Triangle-free graphs with the fewest independent sets*, [arXiv:2503.10002](https://arxiv.org/pdf/2503.10002) (2025).

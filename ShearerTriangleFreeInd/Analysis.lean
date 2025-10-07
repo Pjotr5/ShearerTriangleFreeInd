@@ -907,7 +907,7 @@ lemma F_at_most_one (hx : 0 ≤ x) : 1 ≥ F x := by
 ### Finally the differential equation that F satisfies.
 -/
 
-lemma F_diff_equation : 1 + (x - x^2) * F' x - (x + 1) * F x = 0 := by
+lemma F_diff_equation : (x - x^2) * F' x - (x + 1) * F x + 1 = 0 := by
   by_cases hx : x = 1
   · rw [hx, F_at_one, F'_at_one]; norm_num
   · rw [F_not_one hx, F'_not_one hx, ←mul_right_inj' (dF₀_ne_zero hx),
