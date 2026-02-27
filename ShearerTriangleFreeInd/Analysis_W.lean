@@ -58,12 +58,6 @@ lemma xexp_surjective (hx : xexp (-1) ≤ x) : ∃ y, -1 ≤ y ∧ xexp y = x :=
 
 lemma xexp_InjOn : Set.InjOn xexp (Set.Ici (-1)) := StrictMonoOn.injOn StrictMonoOn_xexp
 
---StrictMonoOn.orderIso
-
--- noncomputable def xexpOrderIso' : Set.Ici (-1 : ℝ) ≃o Set.Ici (xexp (-1)) := by
---   convert StrictMonoOn.orderIso _ _ StrictMonoOn_xexp
---   sorry
-
 noncomputable def xexpOrderIso : Set.Ici (-1 : ℝ) ≃o Set.Ici (xexp (-1)) := by
   refine StrictMono.orderIsoOfSurjective (fun x ↦ ⟨xexp x, xexp_le x.2⟩) ?_ ?_
   · apply StrictMono.codRestrict
@@ -242,10 +236,6 @@ lemma hasDerivAt_W₀ {x : ℝ} (hx : x ∈ Di) : HasDerivAt W (W' x) x := by
 
 lemma W_eq_self_mul_P (hx : x ∈ D) : W x = x * P x := W_eq_x_mul_exp_neg_W hx
 
--- lemma P_eq_on_nonzero (hx : x ∈ D) (hx₀ : x ≠ 0) : P x = W x / x := by
---   rw [W_eq_self_mul_P hx]
---   exact (mul_div_cancel_left₀ _ hx₀).symm
-
 lemma continuousOn_P : ContinuousOn P D := by
   unfold P
   exact Continuous.comp_continuousOn' continuous_exp (ContinuousOn.neg (continuousOn_W))
@@ -257,12 +247,6 @@ lemma hasDerivAt_P (hx : x ∈ Di) : HasDerivAt P (P' x) x := by
 
 lemma continuousAt_P (hx : x ∈ Di) : ContinuousAt P x :=
   HasDerivAt.continuousAt (hasDerivAt_P hx)
-
--- lemma P'_continuousAt (hx : x ∈ Di) : ContinuousAt P' x := by
---   refine ContinuousAt.mul (ContinuousAt.neg (ContinuousAt.div₀ ?_ ?_ ?_)) (continuousAt_P hx)
---   · exact continuousAt_P hx
---   · exact ContinuousAt.add (continuousAt_W hx) continuousAt_const
---   · exact W_add_one_nonzero hx
 
 lemma hasDerivAt_W' (hx : x ∈ Di) : HasDerivAt W' (W'' x) x := by
   convert HasDerivAt.div (hasDerivAt_P hx) (HasDerivAt.add_const 1 (hasDerivAt_W₀ hx))
@@ -796,9 +780,6 @@ lemma bound_pos (hx : 0 ≤ x) : 0 < bound x := by
 
 theorem goal_bound (hx : 0 ≤ x) : 1 < goal x :=
   bound_is_sufficient (Di_sub_D (nonneg_mem_domain_interior hx)) (bound_pos hx)
-
-
-
 
 
 

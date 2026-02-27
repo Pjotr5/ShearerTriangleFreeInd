@@ -169,16 +169,6 @@ lemma induceEdgeMap (S : Set V) :
 lemma induce_edge_card (S : Set V) :
     #E(G.induce S) = #(G.EdgeFinsetInducedBy S) := by rw [←induceEdgeMap, card_map]
 
-lemma induce_edge_card' (S : Set V) :
-    #E(G.induce S) = #(G.EdgeFinsetInducedBy S) := by
-  have bla := congrArg Finset.card (map_edgeFinset_induce (s := S) (G := G))
-  rw [card_map] at bla
-  rw [bla]
-  change #((E(G)).filter (· ∈ (S.toFinset.sym2))) = #(G.EdgeFinsetInducedBy S)
-  congr
-  simp
-
-
 
 lemma EdgeIncidenceFinset_card_zero_from_averageDegree_zero
     (hd : d(G) = 0) (S : Set V) : #(G.EdgeIncidenceFinset S) = 0 := by

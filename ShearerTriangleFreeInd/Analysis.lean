@@ -4,20 +4,6 @@ Authors: Pjotr Buys
 -/
 
 import Mathlib
-import Mathlib.Algebra.Lie.OfAssociative
-import Mathlib.Algebra.Order.Ring.Star
-import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import Mathlib.Analysis.Calculus.FDeriv.Extend
-import Mathlib.Analysis.Calculus.LHopital
-import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Analysis.Normed.Group.Basic
-import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
-import Mathlib.Data.Int.Star
-import Mathlib.Data.Real.StarOrdered
-import Mathlib.GroupTheory.MonoidLocalization.Basic
-import Mathlib.Topology.Algebra.Module.ModuleTopology
-import Mathlib.Topology.GDelta.MetrizableSpace
-import ImportGraph.Imports
 
 /-!
 # Convexity of the Shearer function.
@@ -918,17 +904,3 @@ lemma F_diff_equation : (x - x^2) * F' x - (x + 1) * F x + 1 = 0 := by
     field_simp [(dF₀_ne_zero hx), (dF'₀_ne_zero hx)]
     unfold dF₀ dF'₀ nF₀ nF'₀
     ring
-
-
-/-
-## Tests
--/
-
-
--- def P : (Set.Ioc 0 1) → ℝ → ℝ := fun u x ↦ u / (u + x * (1 - u))
-
--- -- integral_convexOn_of_integrand_ae
-
-
--- lemma F_integral_representation (hx : x > 0) : F x = ()  := by
---     sorry
