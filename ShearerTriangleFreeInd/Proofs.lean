@@ -245,14 +245,12 @@ lemma incident_closedNeighbor_card (hT : G.CliqueFree 3) (v : V) :
 
 lemma incidence_closedNeighbor_expectation (hT : G.CliqueFree 3)
     : 𝔼 v, (#(G.EdgeIncidenceFinset (G.closedNeighborSet v)) : ℚ) = 𝔼 v, (G.degree v : ℚ)^2 := by
-  conv => lhs; rhs; intro _; rw [incident_closedNeighbor_card hT, Nat.cast_sum,
-    ←(Fintype.sum_ite_mem _ _)]
-  simp_rw [expect_sum_comm]
-  conv => lhs; rhs; intro _; rhs; intro i; rw [←mul_boole]
-  conv => lhs; rhs; intro _; rw [←mul_expect, expect, sum_boole, mul_smul_comm]
-  rw [expect, smul_sum]
-  congr; ext _; rw [pow_two]; congr 4
-  ext _; simp only [mem_neighborFinset, adj_comm, mem_filter, mem_univ, true_and]
+  conv_lhs => rhs; intro; rw [incident_closedNeighbor_card hT, Nat.cast_sum, ←Fintype.sum_ite_mem]
+  rw [expect_sum_comm]
+  conv_lhs => rhs; intro; rhs; intro; rw [←mul_boole]
+  conv_lhs => rhs; intro; rw [←mul_expect, expect, sum_boole, mul_smul_comm]
+  rw [expect, smul_sum]; congr 1; ext; rw [pow_two]; congr 4
+  ext; simp [mem_neighborFinset, adj_comm]
 
 lemma incidence_closedNeighbor_expectation_real (hT : G.CliqueFree 3)
     : 𝔼 v, (#(G.EdgeIncidenceFinset (G.closedNeighborSet v)) : ℝ) = 𝔼 v, (G.degree v : ℚ)^2 := by
