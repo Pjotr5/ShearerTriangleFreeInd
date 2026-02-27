@@ -13,6 +13,7 @@ maxSynthPendingDepth = 3
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
+rev = "bb4673611f3"
 
 [[lean_lib]]
 name = "ShearerTriangleFreeInd"

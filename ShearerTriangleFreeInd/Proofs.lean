@@ -5,14 +5,14 @@ import ShearerTriangleFreeInd.Analysis_W
 namespace SimpleGraph
 
 open Finset SimpleGraph BigOperators
-open Classical
+attribute [local instance] Classical.propDecidable
 
 variable {V : Type} {G : SimpleGraph V} {v : V}
 variable [Fintype V]
 
 
-def VertexFinset (G : SimpleGraph V) : Finset V := univ
-noncomputable def averageDegree (G : SimpleGraph V) := 𝔼 v, (G.degree v : ℚ)
+def VertexFinset (_G : SimpleGraph V) : Finset V := univ
+noncomputable def averageDegree {V : Type} [Fintype V] (G : SimpleGraph V) := 𝔼 v, (G.degree v : ℚ)
 noncomputable def indepSetFinsetAll (G : SimpleGraph V) : Finset (Set V) := {s | G.IsIndepSet s}
 
 scoped notation "V(" G ")" => VertexFinset G
@@ -49,9 +49,8 @@ lemma averageDegree_eq_twice_card_edges_div_card : #V(G) * d(G) = 2 * #E(G) := b
   · rw [Nat.cast_mul, Nat.cast_ofNat]
 
 lemma edgeFinset_empty_from_averageDegree_zero (hd : d(G) = 0) : E(G) = ∅ := by
-  rw [←card_eq_zero, ←Rat.natCast_eq_zero, ←mul_eq_zero_iff_left (a := 2) (by norm_num),
+  rw [←card_eq_zero, ←Rat.natCast_eq_zero_iff, ←mul_eq_zero_iff_left (a := 2) (by norm_num),
       ←averageDegree_eq_twice_card_edges_div_card, hd, mul_zero]
-
 
 
 lemma averageDegree_zero_from_vertexType_empty (hV : IsEmpty V) : d(G) = 0 := by
@@ -110,7 +109,7 @@ lemma induce_vertex_card (S : Set V) [DecidablePred (· ∈ S)]
     : #V(G.induce S) = #S.toFinset := by simp [VG_rw]
 
 lemma vertex_card_induce_sum (S : Set V) : #V(G) = #S.toFinset + #Sᶜ.toFinset := by
-  convert (filter_card_add_filter_neg_card_eq_card (· ∈ S)).symm <;>
+  convert (card_filter_add_card_filter_not (· ∈ S)).symm <;>
     (ext _; simp [VG_rw])
 
 lemma induce_vertex_card_compl_lt {S : Set V} (hS : S.Nonempty) : #V(G.induce Sᶜ) < #V(G) := by
@@ -122,7 +121,9 @@ lemma induce_vertex_card_compl_lt {S : Set V} (hS : S.Nonempty) : #V(G.induce S�
 lemma card_vertices_eq_zero_from_empty (hV : IsEmpty V) : #V(G) = 0 :=
   card_eq_zero.2 (univ_eq_empty_iff.2 hV)
 
-lemma vertex_singelton_card (v : V) : #(V(G.induce {v})) = 1 := by
+omit [Fintype V] in
+lemma vertex_singelton_card [Finite V] (v : V) : #(V(G.induce {v})) = 1 := by
+  cases nonempty_fintype V
   convert induce_vertex_card {v}
   rw [Set.toFinset_singleton, card_singleton]
 
@@ -168,6 +169,17 @@ lemma induceEdgeMap (S : Set V) :
 lemma induce_edge_card (S : Set V) :
     #E(G.induce S) = #(G.EdgeFinsetInducedBy S) := by rw [←induceEdgeMap, card_map]
 
+lemma induce_edge_card' (S : Set V) :
+    #E(G.induce S) = #(G.EdgeFinsetInducedBy S) := by
+  have bla := congrArg Finset.card (map_edgeFinset_induce (s := S) (G := G))
+  rw [card_map] at bla
+  rw [bla]
+  change #((E(G)).filter (· ∈ (S.toFinset.sym2))) = #(G.EdgeFinsetInducedBy S)
+  congr
+  simp
+
+
+
 lemma EdgeIncidenceFinset_card_zero_from_averageDegree_zero
     (hd : d(G) = 0) (S : Set V) : #(G.EdgeIncidenceFinset S) = 0 := by
   simp [EdgeIncidenceFinset, edgeFinset_empty_from_averageDegree_zero hd]
@@ -180,7 +192,7 @@ lemma induceAveragedegree_zero_from_averageDegree_zero
 
 lemma edge_card_induce_sum (S : Set V) :
     #E(G) = #(G.EdgeIncidenceFinset S) + #E(induce Sᶜ G) := by
-  convert (filter_card_add_filter_neg_card_eq_card (∃ v ∈ S, v ∈ ·) (s := E(G))).symm
+  convert (card_filter_add_card_filter_not (∃ v ∈ S, v ∈ ·) (s := E(G))).symm
   convert (induce_edge_card Sᶜ)
   ext _
   simp_rw [EdgeFinsetInducedBy, not_exists, not_and, Set.mem_compl_iff]
@@ -202,12 +214,14 @@ lemma incident_closedNeighbor_mem_iff (e : Sym2 V) (v : V) :
     (e ∈ G.EdgeIncidenceFinset (G.closedNeighborSet v)) ↔
     ∃ w ∈ G.neighborSet v, e ∈ G.incidenceSet w := by
   simp_rw [EdgeIncidenceFinset, mem_filter, closedNeighborSet, Set.mem_insert_iff,
-      mem_neighborSet, Set.mem_toFinset, exists_eq_or_imp, incidenceSet, Set.mem_setOf_eq]
+      mem_neighborSet, exists_eq_or_imp, incidenceSet, Set.mem_setOf_eq]
   constructor
   · rintro ⟨he, (hve | ⟨w, hwv, hwe⟩)⟩
-    · exact ⟨Sym2.Mem.other hve, ⟨by rwa [←mem_edgeSet, Sym2.other_spec], ⟨he, Sym2.other_mem _⟩⟩⟩
-    · exact ⟨w, ⟨hwv, ⟨he, hwe⟩⟩⟩
-  · exact fun ⟨w, ⟨hAdj, ⟨he, hwe⟩⟩⟩ ↦ ⟨he, Or.inr ⟨w, ⟨hAdj, hwe⟩⟩⟩
+    · exact ⟨Sym2.Mem.other hve,
+        ⟨by rwa [←mem_edgeSet, Sym2.other_spec, ←mem_edgeFinset],
+         ⟨mem_edgeFinset.mp he, Sym2.other_mem _⟩⟩⟩
+    · exact ⟨w, ⟨hwv, ⟨mem_edgeFinset.mp he, hwe⟩⟩⟩
+  · exact fun ⟨w, ⟨hAdj, ⟨he, hwe⟩⟩⟩ ↦ ⟨mem_edgeFinset.mpr he, Or.inr ⟨w, ⟨hAdj, hwe⟩⟩⟩
 
 lemma incident_closedNeighbor_iff (v : V) :
     G.EdgeIncidenceFinset (G.closedNeighborSet v) =
@@ -254,7 +268,6 @@ lemma incidence_closedNeighbor_expectation_real (hT : G.CliqueFree 3)
     : 𝔼 v, (#(G.EdgeIncidenceFinset (G.closedNeighborSet v)) : ℝ) = 𝔼 v, (G.degree v : ℚ)^2 := by
   rw [←incidence_closedNeighbor_expectation hT]
   convert (algebraMap.coe_expect (M := ℚ) (N := ℝ) _ _).symm
-
 
 lemma averageDegree_square_bound : d(G) ^ 2 ≤ 𝔼 v, (G.degree v : ℚ)^2 := by
   convert expect_mul_sq_le_sq_mul_sq (f := fun v ↦ (G.degree v : ℚ)) (g := fun _ ↦ 1) univ
@@ -352,7 +365,10 @@ lemma indepSet_augment {v : V} {I : Set V} (hI : I ∈ ℐ(G)) :
         fun ⟨hvI, ⟨_, hAdj⟩⟩ u huI huIn ↦
        hAdj u huI (Adj_of_mem_closedNeighborSet_of_ne_v (by grind only) huIn)⟩
 
-lemma indepSet_insert_bound (v : V) : α(G) ≥ α(G.induce (G.closedNeighborSet v)ᶜ) + 1 := by
+omit [Fintype V] in
+lemma indepSet_insert_bound [Finite V] (v : V) :
+    α(G) ≥ α(G.induce (G.closedNeighborSet v)ᶜ) + 1 := by
+  cases nonempty_fintype V
   have ⟨I, hI, hI_card⟩ :=
     (induce (G := G) (G.closedNeighborSet v)ᶜ).exists_mem_indepSetFinsetAll_card_indepNum
   rw [←hI_card, ge_iff_le]
@@ -365,7 +381,7 @@ lemma indepSet_insert_bound (v : V) : α(G) ≥ α(G.induce (G.closedNeighborSet
 lemma indepSet_card_recursion (v : V)
     : #ℐ(G) = #ℐ(G.induce {v}ᶜ) + #ℐ(G.induce (G.closedNeighborSet v)ᶜ) := by
   rw [add_comm]
-  convert (Finset.filter_card_add_filter_neg_card_eq_card (p := (v ∈ ·))).symm
+  convert (Finset.card_filter_add_card_filter_not (p := (v ∈ ·))).symm
   · convert induced_inedependent_set_count (G := G) (S := (G.closedNeighborSet v)ᶜ) using 1
     symm
     refine Finset.card_bij (i := fun S _ ↦ insert v S) ?_ ?_ ?_
@@ -408,7 +424,6 @@ lemma exists_ge_of_le_expect {a : ℝ} {g : V → ℝ} (h_nonempty : Nonempty V)
   have ⟨x, _, h_all⟩ := exists_max_image (s := univ) (f := g) (univ_nonempty_iff.mpr h_nonempty)
   exact ⟨x, le_trans h (expect_le (univ_nonempty_iff.mpr h_nonempty) h_all)⟩
 
-
 lemma Jensen_expect {α : Type} {t : Finset α} (ht : t.Nonempty) {s : Set ℝ} {f : ℝ → ℝ} (p : α → ℝ)
     (hmem : ∀ i ∈ t, p i ∈ s) (hf : ConvexOn ℝ s f) : f (𝔼 i ∈ t, p i) ≤ 𝔼 i ∈ t, f (p i) := by
   let μ := (#t : ℝ)
@@ -421,11 +436,14 @@ lemma Jensen_expect {α : Type} {t : Finset α} (ht : t.Nonempty) {s : Set ℝ} 
       simp_rw [Finset.sum_div, smul_eq_mul, mul_comm]
       congr
     _ ≤ ∑ v ∈ t, μ⁻¹ • f (p v) := by
-      apply ConvexOn.map_sum_le (w := fun _ ↦ μ⁻¹) hf (by simp [μ]) (by field_simp [μ]) hmem
+      apply ConvexOn.map_sum_le (w := fun _ ↦ μ⁻¹) hf (by simp [μ]) (by simp; field_simp; rfl) hmem
     _ = (∑ v ∈ t, f (p v)) / μ := by
       simp_rw [Finset.sum_div, smul_eq_mul, mul_comm]
       congr
-    _ = 𝔼 v ∈ t, f (p v) := (expect_eq_sum_div_card t _).symm
+    _ = 𝔼 i ∈ t, f (p i) := by 
+      subst μ
+      rw [←card_smul_expect, nsmul_eq_mul', mul_div_assoc]
+      field_simp
 
 lemma exp_expect_le_expect_exp (g : V → ℝ) (hV : Nonempty V)
     : Real.exp (𝔼 v, g v) ≤ 𝔼 v, Real.exp (g v) :=
@@ -555,7 +573,7 @@ theorem Shearer_bound (hT : G.CliqueFree 3) {f f' : ℝ → ℝ} (hf : convexIne
   suffices h : ∀ n, ∀ {V' : Type} [Fintype V'] {G' : SimpleGraph V'} (hn : n = #V(G'))
     (hT : G'.CliqueFree 3), α(G') ≥ n * (f d(G')) from (h _ rfl hT)
   intro n
-  induction' n using Nat.strong_induction_on with n hn
+  induction n using Nat.strong_induction_on with | _ n hn =>
   intro V _ G hcard hT
   by_cases hV : Nonempty V
   · rw [←expect_const (univ_nonempty_iff.mpr hV) (α(G) : ℝ)]
@@ -610,7 +628,7 @@ theorem independent_set_count_bound (hT : G.CliqueFree 3) {f f' : ℝ → ℝ}
   suffices h : ∀ n, ∀ {V' : Type} [Fintype V'] {G' : SimpleGraph V'} (hn : n = #V(G'))
     (hT : G'.CliqueFree 3), #ℐ(G') ≥ Real.exp (#V(G') * f d(G')) from (h _ rfl hT)
   intro n
-  induction' n using Nat.strong_induction_on with n hn
+  induction n using Nat.strong_induction_on with | _ n hn =>
   intro V _ G hcard hT
   by_cases hV : Nonempty V
   · rw [←expect_const (univ_nonempty_iff.mpr hV) (#ℐ(G) : ℝ)]
@@ -652,5 +670,6 @@ theorem independent_set_count_bound (hT : G.CliqueFree 3) {f f' : ℝ → ℝ}
         gcongr
         exact h_extra
   · simp [card_vertices_eq_zero_from_empty (not_nonempty_iff.mp hV), indepSetFinsetAll_nonempty]
+
 
 end SimpleGraph

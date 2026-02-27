@@ -33,10 +33,10 @@ lemma StrictMonoOn_xexp : StrictMonoOn xexp (Set.Ici (-1)) :=
     (fun _ hx ↦ mul_pos (by rw [interior_Ici] at hx; exact neg_lt_iff_pos_add'.mp hx) (exp_pos _))
 
 lemma xexp_le (hx : -1 ≤ x) : xexp (-1) ≤ xexp x :=
-  StrictMonoOn.monotoneOn StrictMonoOn_xexp Set.left_mem_Ici hx hx
+  StrictMonoOn.monotoneOn StrictMonoOn_xexp Set.self_mem_Ici hx hx
 
 lemma xexp_lt (hx : -1 < x) : xexp (-1) < xexp x :=
-  StrictMonoOn_xexp Set.left_mem_Ici (le_of_lt hx) hx
+  StrictMonoOn_xexp Set.self_mem_Ici (le_of_lt hx) hx
 
 lemma xexp_neg_one_neg : xexp (-1) < 0 := by
   rw [←xexp_zero]
@@ -52,7 +52,7 @@ lemma self_le_xexp : x ≤ xexp x := by
   · exact mul_nonneg_of_nonpos_of_nonpos hx (sub_nonpos.2 (exp_le_one_iff.2 hx))
 
 lemma xexp_surjective (hx : xexp (-1) ≤ x) : ∃ y, -1 ≤ y ∧ xexp y = x :=
-  IsPreconnected.intermediate_value₂ isPreconnected_Ici (Set.left_mem_Ici)
+  IsPreconnected.intermediate_value₂ isPreconnected_Ici (Set.self_mem_Ici)
     (le_trans self_le_xexp hx) (Continuous.continuousOn continuous_xexp)
     (continuousOn_const (c := x)) hx self_le_xexp
 
@@ -384,7 +384,7 @@ lemma IntAverage_ConvexOn {g : ℝ → ℝ} {a : ℝ} {U : Set ℝ}
     · apply intervalIntegral.integral_mono_on_of_le_Ioo (by norm_num)
       · refine ContinuousOn.intervalIntegrable (ContinuousOn.comp' hCont ?_ ?_)
         · exact Continuous.continuousOn (affine_continuous _ _)
-        · rw [Set.mapsTo', image_affine_uIcc]
+        · rw [Set.mapsTo_iff_image_subset, image_affine_uIcc]
           refine uIcc_sub_connected hCon ?_ ?_
           · convert ha; ring
           · convert (convex_iff_add_mem.1 hConvex.1) hx hy (le_of_lt ha₁)
@@ -393,13 +393,13 @@ lemma IntAverage_ConvexOn {g : ℝ → ℝ} {a : ℝ} {U : Set ℝ}
       · apply ContinuousOn.intervalIntegrable (ContinuousOn.add ?_ ?_)
         · refine ContinuousOn.const_smul (ContinuousOn.comp' hCont ?_ ?_) a₁
           · exact Continuous.continuousOn (affine_continuous _ _)
-          · rw [Set.mapsTo', image_affine_uIcc]
+          · rw [Set.mapsTo_iff_image_subset, image_affine_uIcc]
             refine uIcc_sub_connected hCon ?_ ?_
             · convert ha; ring
             · convert hx; ring
         · refine ContinuousOn.const_smul (ContinuousOn.comp' hCont ?_ ?_) a₂
           · exact Continuous.continuousOn (affine_continuous _ _)
-          · rw [Set.mapsTo', image_affine_uIcc]
+          · rw [Set.mapsTo_iff_image_subset, image_affine_uIcc]
             refine uIcc_sub_connected hCon ?_ ?_
             · convert ha; ring
             · convert hy; ring
@@ -420,14 +420,14 @@ lemma IntAverage_ConvexOn {g : ℝ → ℝ} {a : ℝ} {U : Set ℝ}
     · apply ContinuousOn.intervalIntegrable
       refine ContinuousOn.const_smul (ContinuousOn.comp' hCont ?_ ?_) a₁
       · exact Continuous.continuousOn (affine_continuous _ _)
-      · rw [Set.mapsTo', image_affine_uIcc]
+      · rw [Set.mapsTo_iff_image_subset, image_affine_uIcc]
         refine uIcc_sub_connected hCon ?_ ?_
         · convert ha; ring
         · convert hx; ring
     · apply ContinuousOn.intervalIntegrable
       refine ContinuousOn.const_smul (ContinuousOn.comp' hCont ?_ ?_) a₂
       · exact Continuous.continuousOn (affine_continuous _ _)
-      · rw [Set.mapsTo', image_affine_uIcc]
+      · rw [Set.mapsTo_iff_image_subset, image_affine_uIcc]
         refine uIcc_sub_connected hCon ?_ ?_
         · convert ha; ring
         · convert hy; ring
@@ -469,7 +469,6 @@ lemma G'_rw (hx : x ≠ 2) : G' x = (P x - G x) / (x - 2) := by
   field_simp [(sub_ne_zero_of_ne hx)]
   rw [G', if_neg hx, G_rw hx]
   field_simp [(sub_ne_zero_of_ne hx)]
-  ring
 
 lemma G'_rw' (hx : x ≠ 2) : G' x = nG' x / (x - 2)^2 := if_neg hx
 
@@ -489,7 +488,6 @@ lemma HasDerivAt_P_prim (hx : x ∈ Di) : HasDerivAt P_prim (P x) x := by
     ?_ (hasDerivAt_W₀ hx) using 1
   · unfold W'
     field_simp [W_add_one_nonzero hx]
-    ring
   · convert HasDerivAt.const_mul (1/2)
       (HasDerivAt.mul (hasDerivAt_W₀ hx) (hasDerivAt_W₀ hx)) using 1
     · ext _
@@ -644,7 +642,7 @@ lemma nG'_nonpositive (hx : 0 ≤ x) : nG' x ≤ 0 := by
   rw [←h₃]
   rcases le_total x 2 with (hx' | hx')
   · exact h₁ ⟨hx, hx'⟩ (Set.right_mem_Icc.2 (zero_le_two)) hx'
-  · exact h₂ Set.left_mem_Ici hx' hx'
+  · exact h₂ Set.self_mem_Ici hx' hx'
 
 lemma G'_nonpositive (hx : 0 ≤ x) : G' x ≤ 0 := by
   by_cases hx' : x = 2
@@ -738,7 +736,7 @@ lemma term₂_pos_aux (hx : 0 ≤ x) : (-4 + 2 * P x + W x * P x) < 0 := by
     rw [W_eq_self_mul_P (Di_sub_D hy)]
     ring
   refine lt_of_le_of_lt (a := f x) (b := f 0) ?_ ?_
-  · suffices AntitoneOn f (Set.Ici 0) from this (Set.left_mem_Ici) hx hx
+  · suffices AntitoneOn f (Set.Ici 0) from this (Set.self_mem_Ici) hx hx
     refine antitoneOn_of_hasDerivWithinAt_nonpos (f' := f') ?_ ?_ ?_ ?_
     · exact convex_Ici _
     · intro y hy
@@ -786,7 +784,7 @@ lemma term₁_pos (hx : 0 ≤ x) (hxn : x ≠ 2) : 0 < term₁ x := by
   rw [←(by simp [term₁, nG] : term₁ 2 = 0)]
   rcases ne_iff_lt_or_gt.1 hxn with (hx_lt_two | htwo_lt_x)
   · exact h₁ ⟨hx, le_of_lt hx_lt_two⟩ ⟨zero_le_two, le_rfl⟩ hx_lt_two
-  · exact h₂ Set.left_mem_Ici (le_of_lt htwo_lt_x) htwo_lt_x
+  · exact h₂ Set.self_mem_Ici (le_of_lt htwo_lt_x) htwo_lt_x
 
 lemma bound_pos (hx : 0 ≤ x) : 0 < bound x := by
   by_cases hx₂ : x = 2

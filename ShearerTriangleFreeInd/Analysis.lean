@@ -3,13 +3,14 @@ Copyright (c) 2024 Pjotr Buys. All rights reserved.
 Authors: Pjotr Buys
 -/
 
+import Mathlib
 import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.FDeriv.Extend
 import Mathlib.Analysis.Calculus.LHopital
 import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Analysis.NormedSpace.Connected
+import Mathlib.Analysis.Normed.Group.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import Mathlib.Data.Int.Star
 import Mathlib.Data.Real.StarOrdered
@@ -102,8 +103,9 @@ theorem HasDerivAt.extend_to_singularity (hU_open : IsOpen U) (hx : x ∈ U)
       · rwa [hxy]
       · exact HasFDerivAt.continuousAt
           (g_diff y hxy (hIU (Icc_subset_Icc_left (le_of_lt hxI.1) hy)))
-    · simp_rw [deriv_fderiv.symm]
-      exact Tendsto.comp isBoundedBilinearMap_smulRight.continuous_right.continuousAt
+    · simp_rw [toSpanSingleton_deriv.symm]
+      let cle := ContinuousLinearMap.toSpanSingletonCLE (𝕜 := ℝ) (E := ℝ)
+      exact Tendsto.comp (cle.continuous.continuousAt)
         (Tendsto.congr' (eventuallyEq_nhdsWithin_of_eqOn
           (fun _ hyI ↦ (HasDerivAt.deriv (h_diff_right hyI)).symm))
         (Tendsto.mono_left (y := nhdsWithin x (Ioo x b)) hg' nhdsWithin_le_nhds))
@@ -120,8 +122,9 @@ theorem HasDerivAt.extend_to_singularity (hU_open : IsOpen U) (hx : x ∈ U)
       · rwa [hxy]
       · exact HasFDerivAt.continuousAt (g_diff y hxy
           (hIU (Icc_subset_Icc_right (le_of_lt hxI.2) hy)))
-    · simp_rw [deriv_fderiv.symm]
-      exact Tendsto.comp isBoundedBilinearMap_smulRight.continuous_right.continuousAt
+    · simp_rw [toSpanSingleton_deriv.symm]
+      let cle := ContinuousLinearMap.toSpanSingletonCLE (𝕜 := ℝ) (E := ℝ)
+      exact Tendsto.comp (cle.continuous.continuousAt)
         (Tendsto.congr' (eventuallyEq_nhdsWithin_of_eqOn
           (fun _ hyI ↦ (HasDerivAt.deriv (h_diff_left hyI)).symm))
         (Tendsto.mono_left (y := nhdsWithin x (Ioo a x)) hg' nhdsWithin_le_nhds))
@@ -251,11 +254,13 @@ lemma ContinuousAt.lhopital_iterated (n : ℕ) (ns ds : List (ℝ → ℝ))
           else (ns[0] y) / (ds[0] y))
         x := by
   revert ns ds n; intro n
-  induction' n with n ih
-  · intro ns ds _ _ _ _ _ _  hnC hdC hnZ
+  induction n with
+  | zero =>
+    intro ns ds _ _ _ _ _ _  hnC hdC hnZ
     refine ContinuousAt.congr (ContinuousAt.div₀ hnC hdC hnZ) (Eq.eventuallyEq ?_)
     ext; split <;> simp_all only [ne_eq]
-  · intro ns ds len_ns len_ds hnDer hdDer hnZero hdZero hnC hdC hnZ
+  | succ n ih =>
+    intro ns ds len_ns len_ds hnDer hdDer hnZero hdZero hnC hdC hnZ
     rw [←continuousWithinAt_compl_self, ContinuousWithinAt, if_pos rfl]
     apply Filter.Tendsto.congr' (f₁ := fun y ↦ (ns[0] y) / (ds[0] y) )
       (eventually_nhdsWithin_of_forall fun y hy ↦ (if_neg hy).symm)
@@ -271,10 +276,11 @@ lemma ContinuousAt.lhopital_iterated (n : ℕ) (ns ds : List (ℝ → ℝ))
       simp_rw [Filter.not_eventually, not_ne_iff] at hcontra
       have hInd : ∀ k (hk : k < n + 1), ∃ᶠ (x : ℝ) in nhdsWithin x {x}ᶜ, ds[k+1] x = 0 := by
         intro k
-        induction' k with _ ih
-        · exact fun _ ↦ hcontra
-        · exact fun _ ↦ frequently_deriv_eq_zero_of_frequently_eq_zero (hdZero _ (by linarith))
-              (hdDer _ (by linarith)) (ih (by linarith))
+        induction k with
+        | zero => exact fun _ ↦ hcontra
+        | succ _ ih =>
+          exact fun _ ↦ frequently_deriv_eq_zero_of_frequently_eq_zero (hdZero _ (by linarith))
+            (hdDer _ (by linarith)) (ih (by linarith))
       specialize hInd n (by linarith)
       exact hnZ (ContinuousAt.eq_of_frequently_eq hInd hdC)
     · rw [←(hnZero 0 hn)]
@@ -418,7 +424,7 @@ lemma hasDerivAtInv (hx : 0 < x) : HasDerivAt (fun y ↦ 1 / y) (- 1 / x^2) x :=
 lemma hasDerivAtInvSq (hx : 0 < x) : HasDerivAt (fun y ↦ 1 / y^2) (- 2 / x^3) x := by
   convert HasDerivAt.inv (c := fun y ↦ y^2) (c' := 2 * x) ?_ ?_ using 1
   · ext _; simp
-  · field_simp; ring
+  · field_simp
   · convert Polynomial.hasDerivAt (X (R := ℝ) ^ 2) _ <;> norm_num
   · positivity
 
@@ -474,7 +480,7 @@ lemma hasDerivAt_nF'₁ (hx : 0 < x) : HasDerivAt nF'₁ (nF'₂ x) x := by
 lemma hasDerivAt_nF'₂ (hx : 0 < x) : HasDerivAt nF'₂ (nF'₃ x) x := by
   unfold nF'₂ nF'₃
   convert HasDerivAt.sub (hasDerivAtInvSq hx) (hasDerivAtInv hx) using 1
-  field_simp
+  field_simp; ring
 
 lemma hasDerivAt_dF'₀ : HasDerivAt dF'₀ (dF'₁ x) x := by
   convert Polynomial.hasDerivAt (- 1 + 3 * X (R := ℝ) - 3 * X^2 + X^3) _ <;> norm_num
@@ -626,7 +632,7 @@ lemma Type1_nonneg {l : ℝ → ℝ} (hType : isType1 l) (hx : 0 < x) : 0 ≤ l 
   rw [←hType.2.2]
   rcases le_or_gt x 1 with hx1 | hx1
   · exact hType.1 ⟨hx,hx1⟩ ⟨Real.zero_lt_one, le_refl 1⟩ hx1
-  · exact hType.2.1 left_mem_Ici (mem_Ici_of_Ioi hx1) (le_of_lt hx1)
+  · exact hType.2.1 self_mem_Ici (mem_Ici_of_Ioi hx1) (le_of_lt hx1)
 
 lemma Type2_mul_nonneg {l m : ℝ → ℝ} (hType : isType2 l) (hm : ∀ {x}, 0 < x → 0 ≤ m x) :
   isType2 (fun x ↦ l x * m x) :=
@@ -679,7 +685,7 @@ lemma isType2_nF''₃ : isType2 nF''₃ := by
   · unfold nF''₃; ext x;
     by_cases hx : x = 0
     · rw [hx]; simp
-    · field_simp; ring
+    · field_simp
   · refine ⟨?_,?_⟩ <;> (intro _ _; simp_all)
   · intro _ _; simp [sq_nonneg]
 
@@ -897,7 +903,7 @@ lemma F_at_most_one (hx : 0 ≤ x) : 1 ≥ F x := by
       exact fun y hy ↦ F'_nonpositive hy
     · exact convex_Ici 0
   rw [←(by simp[F] : F 0 = 1)]
-  exact h_mon left_mem_Ici hx hx
+  exact h_mon self_mem_Ici hx hx
 
 
 /-
@@ -912,3 +918,17 @@ lemma F_diff_equation : (x - x^2) * F' x - (x + 1) * F x + 1 = 0 := by
     field_simp [(dF₀_ne_zero hx), (dF'₀_ne_zero hx)]
     unfold dF₀ dF'₀ nF₀ nF'₀
     ring
+
+
+/-
+## Tests
+-/
+
+
+-- def P : (Set.Ioc 0 1) → ℝ → ℝ := fun u x ↦ u / (u + x * (1 - u))
+
+-- -- integral_convexOn_of_integrand_ae
+
+
+-- lemma F_integral_representation (hx : x > 0) : F x = ()  := by
+--     sorry
