@@ -416,24 +416,12 @@ lemma exists_ge_of_le_expect {a : ℝ} {g : V → ℝ} (h_nonempty : Nonempty V)
 
 lemma Jensen_expect {α : Type} {t : Finset α} (ht : t.Nonempty) {s : Set ℝ} {f : ℝ → ℝ} (p : α → ℝ)
     (hmem : ∀ i ∈ t, p i ∈ s) (hf : ConvexOn ℝ s f) : f (𝔼 i ∈ t, p i) ≤ 𝔼 i ∈ t, f (p i) := by
-  let μ := (#t : ℝ)
-  obtain hμ  : 0 < μ := by simp_all only [Nat.cast_pos, card_pos, μ]
-  calc
-    f (𝔼 v ∈ t, p v) = f ((∑ v ∈ t, p v) / μ) := by
-      congr
-      exact expect_eq_sum_div_card t p
-    _ = f (∑ v ∈ t, μ⁻¹ • p v) := by
-      simp_rw [Finset.sum_div, smul_eq_mul, mul_comm]
-      congr
-    _ ≤ ∑ v ∈ t, μ⁻¹ • f (p v) := by
-      apply ConvexOn.map_sum_le (w := fun _ ↦ μ⁻¹) hf (by simp [μ]) (by simp; field_simp; rfl) hmem
-    _ = (∑ v ∈ t, f (p v)) / μ := by
-      simp_rw [Finset.sum_div, smul_eq_mul, mul_comm]
-      congr
-    _ = 𝔼 i ∈ t, f (p i) := by 
-      subst μ
-      rw [←card_smul_expect, nsmul_eq_mul', mul_div_assoc]
-      field_simp
+  have hc : (0 : ℝ) < #t := Nat.cast_pos.2 (card_pos.2 ht)
+  have hrw : ∀ g : α → ℝ, 𝔼 i ∈ t, g i = ∑ i ∈ t, (#t : ℝ)⁻¹ • g i := by
+    intro g; simp_rw [expect_eq_sum_div_card, sum_div, smul_eq_mul, mul_comm, div_eq_mul_inv]
+  rw [hrw, hrw]
+  exact hf.map_sum_le (fun _ _ ↦ inv_nonneg.2 hc.le)
+    (by simp [sum_const, nsmul_eq_mul, mul_inv_cancel₀ hc.ne']) hmem
 
 lemma exp_expect_le_expect_exp (g : V → ℝ) (hV : Nonempty V)
     : Real.exp (𝔼 v, g v) ≤ 𝔼 v, Real.exp (g v) :=
