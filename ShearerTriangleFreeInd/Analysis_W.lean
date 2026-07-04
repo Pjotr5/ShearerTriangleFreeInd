@@ -22,7 +22,7 @@ lemma xexp_neg (hx : x < 0) : xexp x < 0 := mul_neg_of_neg_of_pos hx (exp_pos _)
 
 lemma hasDerivAt_xexp : HasDerivAt xexp ((1 + x) * exp x) x := by
   convert HasDerivAt.mul (hasDerivAt_id' x) (Real.hasDerivAt_exp x) using 1
-  ring
+  all_goals first | rfl | ring
 
 lemma continuous_xexp : Continuous xexp := Continuous.mul continuous_id' continuous_exp
 
@@ -129,7 +129,7 @@ lemma W_affine_combo_pos {a b : ℝ} (hx : xexp (-1) < x) (ha : 0 < a)
     (hb : a ≤ b) : 0 < a * W x + b := by
   convert Right.add_pos_of_pos_of_nonneg
     (mul_pos ha (W_add_one_pos hx)) (sub_nonneg_of_le hb) using 1
-  ring
+  all_goals first | rfl | ring
 
 lemma W_neg_at_neg (hx : xexp (-1) ≤ x) (hx_neg : x < 0) : W x < 0 := by
   rw [←W_zero]
@@ -163,6 +163,7 @@ lemma W_lt_log (hx : xexp 1 < x) : W x < log x := by
   rw [←exp_lt_exp, exp_log (by linarith), exp_W hx2 (by linarith)]
   apply div_lt_self (by linarith)
   convert StrictMonoOn_W' (xexp_le (by linarith)) hx
+  all_goals try rfl
   rw [W_xexp (by linarith)]
 
 lemma log_sub_loglog_lt_W (hx : xexp 1 < x) : log x - log (log x) < W x := by
@@ -180,6 +181,7 @@ lemma hasDerivAt_W (hx : xexp (-1) < x) : HasDerivAt W (exp (-W x) / (1 + W x)) 
     (ContinuousOn.continuousAt continuousOn_W (Ici_mem_nhds hx)) hasDerivAt_xexp
     (mul_ne_zero_iff.2 ⟨(ne_of_lt (one_add_W_pos hx)).symm, exp_ne_zero _⟩)
     (Filter.eventually_iff_exists_mem.2 ⟨_, Ici_mem_nhds hx, fun _ hy ↦ xexp_W hy⟩) using 1
+  all_goals try rfl
   rw [mul_inv, exp_neg, inv_mul_eq_div]
 
 lemma continuousAt_W (hx : xexp (-1) < x) : ContinuousAt W x :=
@@ -243,6 +245,7 @@ lemma continuousOn_P : ContinuousOn P D := by
 lemma hasDerivAt_P (hx : x ∈ Di) : HasDerivAt P (P' x) x := by
   convert HasDerivAt.comp x (Real.hasDerivAt_exp (-W x))
     (HasDerivAt.fun_neg (hasDerivAt_W₀ hx)) using 1
+  all_goals try rfl
   rw [mul_comm]; rfl
 
 lemma continuousAt_P (hx : x ∈ Di) : ContinuousAt P x :=
@@ -251,6 +254,7 @@ lemma continuousAt_P (hx : x ∈ Di) : ContinuousAt P x :=
 lemma hasDerivAt_W' (hx : x ∈ Di) : HasDerivAt W' (W'' x) x := by
   convert HasDerivAt.div (hasDerivAt_P hx) (HasDerivAt.add_const 1 (hasDerivAt_W₀ hx))
     (W_add_one_nonzero hx) using 1
+  all_goals try rfl
   unfold W'' P' W'
   field_simp [W_add_one_nonzero hx]
   ring
@@ -260,6 +264,7 @@ lemma continuousAt_W' (hx : x ∈ Di) : ContinuousAt W' x :=
 
 lemma hasDerivAt_P' (hx : x ∈ Di) : HasDerivAt P' (P'' x) x := by
   convert HasDerivAt.mul (HasDerivAt.fun_neg (hasDerivAt_W' hx)) (hasDerivAt_P hx) using 1
+  all_goals try rfl
   unfold P'' W'' P' W'
   field_simp [W_add_one_nonzero hx]
   ring
@@ -311,14 +316,6 @@ lemma image_affine_uIcc (a b c d : ℝ) :
 lemma affine_continuous (a b : ℝ) : Continuous (a * · + b) :=
   Continuous.add (continuous_mul_left _) continuous_const
 
--- Probably not necessary.
-lemma uIcc_convexHull (a b : ℝ) : convexHull ℝ {a, b} = Set.uIcc a b :=
-  Set.Subset.antisymm (convexHull_min
-    (Set.pair_subset (Set.left_mem_uIcc) (Set.right_mem_uIcc)) (convex_uIcc _ _))
-    (Set.OrdConnected.uIcc_subset (Convex.ordConnected (convex_convexHull _ _))
-    (mem_convexHull_iff.mpr (fun _ h _ ↦ h (Set.mem_insert _ _)))
-    (mem_convexHull_iff.mpr (fun _ h _ ↦ h (Set.mem_insert_of_mem _ rfl))))
-
 lemma uIcc_sub_connected {a b : ℝ} {U : Set ℝ} (hU : IsConnected U) (ha : a ∈ U) (hb : b ∈ U) :
     Set.uIcc a b ⊆ U :=
   Set.OrdConnected.uIcc_subset (IsPreconnected.ordConnected (IsConnected.isPreconnected hU)) ha hb
@@ -338,15 +335,18 @@ lemma IntAverage_eq (a b : ℝ) (g : ℝ → ℝ) (hCont : ContinuousOn g (Set.u
     · (expose_names; exact sub_ne_zero_of_ne h)
     · rw [←intervalIntegral.integral_mul_const]
       symm
-      convert intervalIntegral.integral_comp_mul_deriv'
-        (f := fun t ↦ (b - a)*t + a) ?_ ?_ ?_ using 1
+      convert intervalIntegral.integral_comp_mul_deriv' (a := 0) (b := 1)
+        (f := fun t ↦ (b - a)*t + a) (f' := fun _ ↦ b - a) (g := g) ?_ ?_ ?_ using 1
       · simp
+      · norm_num
       · intro _ _
         rw [hasDerivAt_add_const_iff]
-        convert hasDerivAt_mul_const (b-a) using 1;
+        convert hasDerivAt_mul_const (b-a) using 1
+        all_goals try rfl
         ext; ring
       · exact continuousOn_const
       · convert hCont
+        all_goals try rfl
         rw [image_affine_uIcc]
         congr! <;> ring
 
@@ -389,6 +389,7 @@ lemma IntAverage_ConvexOn {g : ℝ → ℝ} {a : ℝ} {U : Set ℝ}
             · convert hy; ring
       · intro t ht
         convert hConvex.2 ?_ ?_ ?_ ha₁ ha₂ ha₁₂ using 2
+        · rfl
         · rw [eq_sub_of_add_eq ha₁₂]; ring
         · refine uIcc_sub_connected hCon ha hx ?_
           have this := image_affine_uIcc (x-a) a 0 1
@@ -420,6 +421,7 @@ lemma IntAverage_ConvexOn {g : ℝ → ℝ} {a : ℝ} {U : Set ℝ}
   · refine ContinuousOn.mono hCont (uIcc_sub_connected hCon ha ?_)
     convert (convex_iff_add_mem.1 hConvex.1) hx hy (le_of_lt ha₁)
               (le_of_lt ha₂) ha₁₂ using 1
+    simp [smul_eq_mul]
 
 
 
@@ -470,10 +472,14 @@ lemma HasDerivAt_P_prim (hx : x ∈ Di) : HasDerivAt P_prim (P x) x := by
   unfold P_prim
   convert HasDerivAt.add (f := fun x ↦ (1 / 2) * (W x)^2) (f' := W x * W' x)
     ?_ (hasDerivAt_W₀ hx) using 1
+  · rfl
+  · rfl
+  · rfl
   · unfold W'
     field_simp [W_add_one_nonzero hx]
   · convert HasDerivAt.const_mul (1/2)
       (HasDerivAt.mul (hasDerivAt_W₀ hx) (hasDerivAt_W₀ hx)) using 1
+    all_goals try rfl
     · ext _
       simp only [one_div, Pi.mul_apply, mul_eq_mul_left_iff, inv_eq_zero,
       OfNat.ofNat_ne_zero, or_false]
@@ -491,6 +497,7 @@ lemma G_int_eq_G : Set.EqOn G_int G Di := by
   · rw [interval_average_eq_div]
     congr 1
     convert intervalIntegral.integral_eq_sub_of_hasDerivAt (f := P_prim) (f' := P) ?_ ?_ using 1
+    · rfl
     · intro _ ht
       apply HasDerivAt_P_prim
       exact lt_mem_uIcc two_mem_domain_interior hx ht
@@ -514,8 +521,9 @@ lemma nG_hasDerivAt (hx : x ∈ Di) : HasDerivAt nG (P x) x :=
 lemma nG'_hasDerivAt (hx : x ∈ Di) : HasDerivAt nG' (dnG' x) x := by
   have h₁ : HasDerivAt (fun t ↦ P t * (t - 2)) (P' x * (x - 2) + P x) x := by
     convert HasDerivAt.mul (hasDerivAt_P hx) (HasDerivAt.add_const (-2) (hasDerivAt_id' x)) using 1
-    ring
+    all_goals first | rfl | ring
   convert HasDerivAt.sub h₁ (nG_hasDerivAt hx) using 1
+  all_goals try rfl
   unfold dnG'
   ring
 
@@ -524,13 +532,14 @@ lemma nG'_continuousOn : ContinuousOn nG' Di :=
 
 lemma dnG'_hasDerivAt (hx : x ∈ Di) : HasDerivAt dnG' (ddnG' x) x := by
   convert HasDerivAt.mul (hasDerivAt_P' hx) (HasDerivAt.add_const (-2) (hasDerivAt_id' x)) using 1
+  all_goals try rfl
   unfold ddnG'
   ring
 
 
 lemma ddnG'_continuousAt (hx : x ∈ Di) : ContinuousAt ddnG' x :=
   ContinuousAt.add (ContinuousAt.mul (continuousAt_P'' hx)
-  (Continuous.continuousAt (continuous_add_right (-2)))) (continuousAt_P' hx)
+  (Continuous.continuousAt (continuous_add_const (-2)))) (continuousAt_P' hx)
 
 
 lemma pos_of_dist_two_lt_two {x : ℝ} (hx : dist x 2 < 2) : 0 < x := by
@@ -542,6 +551,7 @@ lemma G_hasDerivAt_aux (hx : x ∈ Di \ {2}) : HasDerivAt G (G' x) x := by
       ?_ (fun _ hy ↦ (if_neg hy.2).symm)
   convert HasDerivAt.div (nG_hasDerivAt hx.1)
     (HasDerivAt.add_const (-2) (hasDerivAt_id' x)) (sub_ne_zero_of_ne hx.2 ) using 1
+  all_goals try rfl
   rw [mul_one];
   exact if_neg hx.2
 
@@ -559,10 +569,11 @@ lemma G'_continuousAt_two : ContinuousAt G' 2 := by
   · intro k _
     interval_cases k <;> refine Filter.Eventually.of_forall ?_
     · intro x
-      convert Polynomial.hasDerivAt (X^2 - 4*X + 4 : ℝ[X]) _ <;> (norm_num; ring)
+      convert Polynomial.hasDerivAt (X^2 - 4*X + 4 : ℝ[X]) _ <;> norm_num
+      all_goals first | rfl | ring
     · intro x
       convert Polynomial.hasDerivAt (2*X - 4 : ℝ[X]) _ <;> norm_num
-      ring
+      all_goals first | rfl | ring
   · intro k _
     interval_cases k
     · simp [nG, nG']
@@ -687,14 +698,16 @@ lemma term₁_hasDerivAt (hxD : x ∈ Di)
   have h₂ : HasDerivAt (fun x ↦ x - 2) 1 x            := HasDerivAt.add_const _ (hasDerivAt_id' _)
   have h₃ : HasDerivAt (fun x ↦ (x - 2) * P x) (P x + (x - 2) * P' x) x := by
     convert HasDerivAt.mul h₂ (hasDerivAt_P hxD) using 1
+    all_goals try rfl
     rw [one_mul]
   have h₄ : HasDerivAt (fun x ↦ 4 + W x) (W' x) x     := HasDerivAt.const_add 4 (hasDerivAt_W₀ hxD)
   have h₅ : HasDerivAt (fun x ↦ (x - 2) * P x * (4 + W x))
       (P x * (4 + W x) + (x - 2) * (4 + W x) * P' x + (x - 2) * P x * W' x) x := by
     convert HasDerivAt.mul h₃ h₄ using 1
-    ring
+    all_goals first | rfl | ring
   have h₆ : HasDerivAt (fun x ↦ P x + 2) (P' x) x := HasDerivAt.add_const _ (hasDerivAt_P hxD)
   convert HasDerivAt.sub h₁ (HasDerivAt.div h₅ h₆ hP) using 1
+  all_goals try rfl
   rw [term₂, P', W']
   field_simp
   rw [W_eq_self_mul_P (Di_sub_D hxD)]
@@ -708,12 +721,14 @@ lemma term₂_pos_aux (hx : 0 ≤ x) : (-4 + 2 * P x + W x * P x) < 0 := by
   have hxD := (nonneg_mem_domain_interior hx)
   have h₁ {y : ℝ} (hy : y ∈ Di) : HasDerivAt (fun x ↦ -4 + 2 * P x) (2 * P' y) y  := by
     convert HasDerivAt.add (hasDerivAt_const y (-4))
-      (HasDerivAt.const_mul ?_ (hasDerivAt_P hy)) using 1
-    · ring
+      (HasDerivAt.const_mul 2 (hasDerivAt_P hy)) using 1
+    all_goals try rfl
+    ring
   have h₂ {y : ℝ} (hy : y ∈ Di) : HasDerivAt (fun x ↦ W x * P x) (W' y * P y + W y * P' y) y :=
     HasDerivAt.mul (hasDerivAt_W₀ hy) (hasDerivAt_P hy)
   have h₃ {y : ℝ} (hy : y ∈ Di) : HasDerivAt f (f' y) y := by
     convert HasDerivAt.add (h₁ hy) (h₂ hy) using 1
+    all_goals try rfl
     rw [P', W']
     have _ := W_add_one_pos hy
     field_simp

@@ -177,17 +177,18 @@ lemma EdgeIncidenceFinset_card_zero_from_averageDegree_zero
 lemma induceAveragedegree_zero_from_averageDegree_zero
     (hd : d(G) = 0) (S : Set V) : d(G.induce S) = 0 := by
   rw [←edgeFinset_empty_iff_averageDegree_zero, ←card_eq_zero] at *
-  rw [←Nat.le_zero, ←hd, induce_edge_card]
-  exact card_le_card (filter_subset _ _)
+  rw [←Nat.le_zero, ←hd]
+  exact (induce_edge_card S).trans_le (card_le_card (filter_subset _ _))
 
 lemma edge_card_induce_sum (S : Set V) :
     #E(G) = #(G.EdgeIncidenceFinset S) + #E(induce Sᶜ G) := by
   convert (card_filter_add_card_filter_not (∃ v ∈ S, v ∈ ·) (s := E(G))).symm
+  · rfl
   convert (induce_edge_card Sᶜ)
   ext _
   simp_rw [EdgeFinsetInducedBy, not_exists, not_and, Set.mem_compl_iff]
   congr! 3
-  constructor <;> exact fun hx _ hv hvS ↦ hx _ hvS hv
+  constructor <;> exact fun hx hv hvS ↦ hx hvS hv
 
 lemma edge_incidence_singelton_eq (v : V) : G.EdgeIncidenceFinset {v} = G.incidenceFinset v := by
   ext _
@@ -256,9 +257,12 @@ lemma incidence_closedNeighbor_expectation_real (hT : G.CliqueFree 3)
     : 𝔼 v, (#(G.EdgeIncidenceFinset (G.closedNeighborSet v)) : ℝ) = 𝔼 v, (G.degree v : ℚ)^2 := by
   rw [←incidence_closedNeighbor_expectation hT]
   convert (algebraMap.coe_expect (M := ℚ) (N := ℝ) _ _).symm
+  · norm_cast
+  · rfl
 
 lemma averageDegree_square_bound : d(G) ^ 2 ≤ 𝔼 v, (G.degree v : ℚ)^2 := by
   convert expect_mul_sq_le_sq_mul_sq (f := fun v ↦ (G.degree v : ℚ)) (g := fun _ ↦ 1) univ
+  · rfl
   · simp only [averageDegree, mul_one]
   · by_cases h_nonempty : Nonempty V
     · rw [expect_const (univ_nonempty_iff.2 h_nonempty), one_pow, mul_one]
@@ -386,10 +390,10 @@ lemma indepSet_card_recursion (v : V)
       · exact fun hv ↦ hS₂.2 hv self_mem_closedNeighborSet
     · intro S hS
       use S \ {v}
-      simp only [Set.insert_diff_singleton, Set.insert_eq_self, mem_filter,
-        Set.diff_singleton_subset_iff, exists_prop]
+      simp only [Set.insert_sdiff_singleton, Set.insert_eq_self, mem_filter,
+        Set.sdiff_singleton_subset_iff, exists_prop]
       simp_rw [mem_filter] at hS
-      refine ⟨⟨indepSetFinsetAll_subset hS.1 Set.diff_subset,?_⟩, hS.2⟩
+      refine ⟨⟨indepSetFinsetAll_subset hS.1 Set.sdiff_subset,?_⟩, hS.2⟩
       intro x hx
       refine Set.mem_insert_iff.mpr ?_
       rw [or_iff_not_imp_left]
@@ -401,16 +405,6 @@ lemma indepSet_card_recursion (v : V)
   · exact inferInstance
   · exact inferInstance
 
-
-/-
-  ## exists lemma
--/
-
-/- `le` version of `exists_lt_of_lt_expect`-/
-lemma exists_ge_of_le_expect {a : ℝ} {g : V → ℝ} (h_nonempty : Nonempty V) (h : a ≤ 𝔼 i, g i)
-  : ∃ x, a ≤ g x := by
-  have ⟨x, _, h_all⟩ := exists_max_image (s := univ) (f := g) (univ_nonempty_iff.mpr h_nonempty)
-  exact ⟨x, le_trans h (expect_le (univ_nonempty_iff.mpr h_nonempty) h_all)⟩
 
 lemma Jensen_expect {α : Type} {t : Finset α} (ht : t.Nonempty) {s : Set ℝ} {f : ℝ → ℝ} (p : α → ℝ)
     (hmem : ∀ i ∈ t, p i ∈ s) (hf : ConvexOn ℝ s f) : f (𝔼 i ∈ t, p i) ≤ 𝔼 i ∈ t, f (p i) := by
@@ -520,6 +514,7 @@ lemma convex_step_expect {F : V → Set V} {f f' : ℝ → ℝ} (hf : convexIneq
   convert expect_le_expect
     (f := fun v ↦ #V(G) * f d(G) + extra G f f' #(F v).toFinset #(G.EdgeIncidenceFinset (F v)))
     (fun v hv ↦ convex_step_induce _ hf) using 1
+  · rfl
   rw [expect_add_distrib, extra_expect]
   congr 1
   by_cases hV : #V(G) = 0
@@ -566,7 +561,7 @@ theorem Shearer_bound (hT : G.CliqueFree 3) {f f' : ℝ → ℝ} (hf : convexIne
         · rw [hcard]
           exact induce_vertex_card_compl_lt nonempty_closedNeighborSet
         · rfl
-        · exact CliqueFree.comap (Embedding.induce _) hT
+        · exact CliqueFree.comap ⟨Copy.induce G _⟩ hT
       _                 ≥ #V(G) * f d(G) + extra G f f' (d(G) + 1) (d(G) ^ 2) + 1 := by
         gcongr;
         exact convex_step_expect_closedNeighbor hf hT hf'
@@ -623,12 +618,12 @@ theorem independent_set_count_bound (hT : G.CliqueFree 3) {f f' : ℝ → ℝ}
           · rw [hcard]
             refine induce_vertex_card_compl_lt ⟨v, rfl⟩
           · rfl
-          · exact CliqueFree.comap (Embedding.induce _) hT
+          · exact CliqueFree.comap ⟨Copy.induce G _⟩ hT
         · apply hn (#V(G.induce (G.closedNeighborSet v)ᶜ))
           · rw [hcard]
             refine induce_vertex_card_compl_lt nonempty_closedNeighborSet
           · rfl
-          · exact CliqueFree.comap (Embedding.induce _) hT
+          · exact CliqueFree.comap ⟨Copy.induce G _⟩ hT
       _   ≥   Real.exp (𝔼 v, #V(G.induce {v}ᶜ) * f d(G.induce {v}ᶜ))
             + Real.exp (𝔼 v, #V(G.induce (G.closedNeighborSet v)ᶜ)
                               * f d(G.induce (G.closedNeighborSet v)ᶜ)) := by

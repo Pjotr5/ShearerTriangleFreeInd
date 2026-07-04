@@ -56,8 +56,8 @@ section General
 -- Extension lemma for HasDerivAt
 lemma HasDerivAt.congr_on_open {f'x : ℝ} (hU_open : IsOpen U) (hx : x ∈ U)
     (hf : HasDerivAt f f'x x) (heq : U.EqOn f g) : HasDerivAt g f'x x :=
-  HasDerivWithinAt.hasDerivAt (HasDerivWithinAt.congr (HasDerivAt.hasDerivWithinAt hf)
-    (fun _ a ↦ (heq a).symm) (heq hx).symm) (IsOpen.mem_nhds hU_open hx)
+  hf.congr_of_eventuallyEq (Filter.eventuallyEq_of_mem (hU_open.mem_nhds hx)
+    fun _ hy ↦ (heq hy).symm)
 
 -- Main extension theorem for derivatives
 theorem HasDerivAt.extend_to_singularity (hU_open : IsOpen U) (hx : x ∈ U)
@@ -128,11 +128,6 @@ lemma pos_of_dist_one_lt_one (hx : dist x 1 < 1) : 0 < x := by
   rw [Real.dist_eq, abs_sub_lt_iff] at hx
   linarith
 
--- Extract property from neighborhood
-lemma eventually_nhds_self {p : ℝ → Prop} (h : ∀ᶠ (y : ℝ) in nhds x, p y) : p x := by
-  have ⟨_, hε, hall⟩ := (Metric.eventually_nhds_iff_ball.1 h)
-  exact hall _ (Metric.mem_ball_self hε)
-
 -- Propagate zeros to derivatives
 lemma frequently_deriv_eq_zero_of_frequently_eq_zero
     (hx : g x = 0)
@@ -191,34 +186,13 @@ lemma ContinuousAt.eq_of_frequently_eq {g : ℝ → ℝ} {a x : ℝ}
 lemma ConvexOn.tangent_line_le (hgc : ConvexOn ℝ U g) (hx : x ∈ U) (hy : y ∈ U)
   (hg' : HasDerivAt g (g' y) y) : g y + g' y * (x - y) ≤ g x := by
   rcases lt_trichotomy x y with hxy | hxy | hxy
-  · rw [←le_sub_iff_add_le', ←neg_le_neg_iff, neg_sub, mul_comm, neg_mul_eq_neg_mul, neg_sub,
-          ←div_le_iff₀' (by linarith), div_eq_inv_mul]
-    convert ConvexOn.slope_le_of_hasDerivAt hgc hx hy hxy hg' using 1
+  · have h := hgc.slope_le_of_hasDerivAt hx hy hxy hg'
+    rw [slope_def_field, div_le_iff₀ (by linarith)] at h
+    linarith
   · simp only [hxy, sub_self, mul_zero, add_zero, le_refl]
-  · let φ : ℝ → ℝ   := fun x ↦ -x
-    have hgmc   : ConvexOn ℝ (φ '' U) (g ∘ φ) := by
-      refine ⟨Convex.is_linear_image hgc.1 (IsLinearMap.isLinearMap_neg), ?_⟩
-      intro mv ⟨v, hvS, hv⟩ mw ⟨w, hwS, hw⟩ a b hap hbp hab
-      rw [←hv, ←hw]
-      convert hgc.2 hvS hwS hap hbp hab using 1 <;> unfold φ
-      · simp only [Function.comp_apply, smul_eq_mul, mul_neg, neg_add, neg_neg]
-      · simp only [Function.comp_apply, neg_neg, smul_eq_mul]
-    have hgm'c  : HasDerivAt (g ∘ φ) (φ (g' y)) (φ y) := by
-      convert HasDerivAt.scomp (φ y) (h := φ) (h' := -1) (g₁ := g) (g₁' := g' y) ?_ ?_ using 1
-      · simp only [smul_eq_mul, neg_mul, one_mul, φ]
-      · convert hg'
-        simp [φ]
-      · exact hasDerivAt_neg' _
-    rw [←le_sub_iff_add_le]
-    apply (tsub_le_iff_left (c := - (g' y * (x - y)))).1
-    rw [neg_mul_eq_neg_mul, ←mul_inv_le_iff₀ (by linarith), mul_comm]
-    convert ConvexOn.slope_le_of_hasDerivAt (x := -x) hgmc ?_ ?_ ?_ hgm'c using 1
-    · rw [slope, sub_neg_eq_add, add_comm]
-      congr 1
-      simp [φ]
-    · exact (Set.mem_image _ _ _).2 ⟨x, hx, rfl⟩
-    · exact (Set.mem_image _ _ _).2 ⟨y, hy, rfl⟩
-    · exact neg_lt_neg_iff.mpr hxy
+  · have h := hgc.le_slope_of_hasDerivAt hy hx hxy hg'
+    rw [slope_def_field, le_div_iff₀ (by linarith)] at h
+    linarith
 
 /-!
 ### L'Hôpital's rule
@@ -271,12 +245,10 @@ lemma ContinuousAt.lhopital_iterated (n : ℕ) (ns ds : List (ℝ → ℝ))
       exact hnZ (ContinuousAt.eq_of_frequently_eq hInd hdC)
     · rw [←(hnZero 0 hn)]
       refine continuousWithinAt_compl_self.2 ?_
-      have this := (eventually_nhds_self (hnDer 0 hn))
-      exact HasDerivAt.continuousAt this
+      exact HasDerivAt.continuousAt (hnDer 0 hn).self_of_nhds
     · rw [←(hdZero 0 hn)]
       refine continuousWithinAt_compl_self.2 ?_
-      have this := (eventually_nhds_self (hdDer 0 hn))
-      exact HasDerivAt.continuousAt this
+      exact HasDerivAt.continuousAt (hdDer 0 hn).self_of_nhds
     · specialize ih ns.tail ds.tail hn_tail hd_tail ?_ ?_ ?_ ?_ ?_ ?_ ?_
       · intro k hk
         convert hnDer (k+1) (by linarith) using 3
@@ -295,9 +267,9 @@ lemma ContinuousAt.lhopital_iterated (n : ℕ) (ns ds : List (ℝ → ℝ))
         convert Filter.Tendsto.congr' ?_ ih using 2
         · simp
         · refine eventually_nhdsWithin_of_forall ?_
-          intro _ hy
-          convert if_neg hy using 1
-          simp
+          intro y hy
+          rw [Set.mem_compl_iff, Set.mem_singleton_iff] at hy
+          simp [if_neg hy]
 
 end General
 
@@ -404,14 +376,17 @@ lemma F''_on_S : S.EqOn F''  (fun x ↦ nF''₀ x  / dF''₀ x)  := fun _ hx ↦
 
 lemma hasDerivAtInv (hx : 0 < x) : HasDerivAt (fun y ↦ 1 / y) (- 1 / x^2) x := by
   convert hasDerivAt_inv (ne_of_lt hx).symm using 1
+  · rfl
   · ext _; ring
   · ring
 
 lemma hasDerivAtInvSq (hx : 0 < x) : HasDerivAt (fun y ↦ 1 / y^2) (- 2 / x^3) x := by
   convert HasDerivAt.inv (c := fun y ↦ y^2) (c' := 2 * x) ?_ ?_ using 1
+  · rfl
   · ext _; simp
   · field_simp
   · convert Polynomial.hasDerivAt (X (R := ℝ) ^ 2) _ <;> norm_num
+    all_goals rfl
   · positivity
 
 -- `F`
@@ -420,22 +395,29 @@ lemma hasDerivAt_nF₀ (hx : 0 < x) : HasDerivAt nF₀ (nF₁ x) x := by
   unfold nF₀ nF₁
   convert HasDerivAt.add_const 1 (HasDerivAt.sub (f := fun x ↦ x * Real.log x)
     (f' := Real.log x + 1) ?_ (hasDerivAt_id' x)) using 1
+  · rfl
+  · rfl
+  · rfl
   · ring
   · convert HasDerivAt.mul (hasDerivAt_id' x) (Real.hasDerivAt_log (ne_of_lt hx).symm) using 1
+    all_goals try rfl
     field_simp
 
 lemma hasDerivAt_nF₁ (hx : 0 < x) : HasDerivAt nF₁ (nF₂ x) x := by
   unfold nF₂
   convert Real.hasDerivAt_log (ne_of_lt hx).symm using 1
-  exact one_div x
+  · rfl
+  · exact one_div x
 
 lemma hasDerivAt_dF₀ : HasDerivAt dF₀ (dF₁ x) x := by
   convert Polynomial.hasDerivAt (1 - 2 * X (R := ℝ) + X^2) _ <;> norm_num
+  · rfl
   · unfold dF₀; ring
   · unfold dF₁; ring
 
 lemma hasDerivAt_dF₁ : HasDerivAt dF₁ (dF₂ x) x := by
   convert Polynomial.hasDerivAt (-2 + 2 * X (R := ℝ)) _ <;> norm_num
+  · rfl
   · unfold dF₁; ring
   · rfl
 
@@ -445,41 +427,55 @@ lemma hasDerivAt_nF'₀ (hx : 0 < x) : HasDerivAt nF'₀ (nF'₁ x) x := by
   unfold nF'₀ nF'₁
   convert HasDerivAt.sub (f := fun x ↦ 2*x - 2) (f' := 2)
     (g := fun x ↦ (1 + x) * Real.log x) (g' := 1 + 1/x + Real.log x) ?_ ?_ using 1
+  · rfl
+  · rfl
   · ext _; rw [Pi.sub_apply]; ring
   · ring
   · convert Polynomial.hasDerivAt (- 2 + 2 * X (R := ℝ)) _ <;> norm_num
-    ring
+    all_goals first | rfl | ring
   · convert HasDerivAt.mul (c := fun x ↦ 1 + x) (c' := 1) ?_
       (Real.hasDerivAt_log (ne_of_lt hx).symm) using 1
+    all_goals try rfl
     · field_simp; ring
     · convert Polynomial.hasDerivAt (1 + X (R := ℝ)) _ <;> norm_num
+      all_goals rfl
 
 lemma hasDerivAt_nF'₁ (hx : 0 < x) : HasDerivAt nF'₁ (nF'₂ x) x := by
   unfold nF'₁ nF'₂
   convert HasDerivAt.sub (f := fun x ↦ 1 - 1/x) (f' := 1 / x^2) ?_
     (Real.hasDerivAt_log (ne_of_lt hx).symm) using 1
+  · rfl
+  · rfl
+  · rfl
   · field_simp
   · convert HasDerivAt.sub (g := fun x ↦ 1 / x) (g' := - 1 / x^2)
       (hasDerivAt_const x 1) (hasDerivAtInv hx) using 1
+    all_goals try rfl
     ring
 
 lemma hasDerivAt_nF'₂ (hx : 0 < x) : HasDerivAt nF'₂ (nF'₃ x) x := by
   unfold nF'₂ nF'₃
   convert HasDerivAt.sub (hasDerivAtInvSq hx) (hasDerivAtInv hx) using 1
+  · rfl
+  · rfl
+  · rfl
   field_simp; ring
 
 lemma hasDerivAt_dF'₀ : HasDerivAt dF'₀ (dF'₁ x) x := by
   convert Polynomial.hasDerivAt (- 1 + 3 * X (R := ℝ) - 3 * X^2 + X^3) _ <;> norm_num
+  · rfl
   · unfold dF'₀; ring
   · unfold dF'₁; ring
 
 lemma hasDerivAt_dF'₁ : HasDerivAt dF'₁ (dF'₂ x) x := by
   convert Polynomial.hasDerivAt (3 - 6 * X (R := ℝ) + 3 * X^2) _ <;> norm_num
+  · rfl
   · unfold dF'₁; ring
   · unfold dF'₂; ring
 
 lemma hasDerivAt_dF'₂ : HasDerivAt dF'₂ (dF'₃ x) x := by
   convert Polynomial.hasDerivAt (-6 + 6 * X (R := ℝ)) _ <;> norm_num
+  · rfl
   · unfold dF'₂; ring
   · unfold dF'₃; ring
 
@@ -491,61 +487,82 @@ lemma hasDerivAt_nF''₀ (hx : 0 < x) : HasDerivAt nF''₀ (nF''₁ x) x := by
     (f := fun x ↦ 1 + 4 * x - 5 * x^2) (f' := 4 - 10*x)
     (g := fun x ↦ (4 * x + 2 * x^2) * Real.log x)
     (g' := 4 + 2 * x + 4 * Real.log x + 4 * x * Real.log x) ?_ ?_ using 1
+  · rfl
+  · rfl
   · ext _; rw [Pi.add_apply]; ring
   · ring
-  · convert Polynomial.hasDerivAt (1 + 4 * X (R := ℝ) - 5 * X^2) _ <;> norm_num; ring
+  · convert Polynomial.hasDerivAt (1 + 4 * X (R := ℝ) - 5 * X^2) _ <;> norm_num
+    all_goals first | rfl | ring
   · convert HasDerivAt.mul (c := fun x ↦ 4 * x + 2 * x^2) (c' := 4 + 4 * x) ?_
       (Real.hasDerivAt_log (ne_of_lt hx).symm) using 1
+    all_goals try rfl
     · field_simp; ring
-    · convert Polynomial.hasDerivAt (4 * X (R := ℝ) + 2 * X^2) _ <;> norm_num; ring
+    · convert Polynomial.hasDerivAt (4 * X (R := ℝ) + 2 * X^2) _ <;> norm_num
+      all_goals first | rfl | ring
 
 lemma hasDerivAt_nF''₁ (hx : 0 < x) : HasDerivAt nF''₁ (nF''₂ x) x := by
   unfold nF''₁ nF''₂
   convert HasDerivAt.add
     (f := fun x ↦ 8 - 8 * x) (f' := - 8)
     (g := fun x ↦ (4 + 4 * x) * Real.log x) (g' := 4 + 4 / x + 4 * Real.log x) ?_ ?_ using 1
+  · rfl
+  · rfl
   · ext _; rw [Pi.add_apply]; ring
   · ring
   · convert Polynomial.hasDerivAt (8 - 8 * X (R := ℝ)) _ <;> norm_num
+    all_goals rfl
   · convert HasDerivAt.mul (c := fun x ↦ 4 + 4 * x) (c' := 4) ?_
       (Real.hasDerivAt_log (ne_of_lt hx).symm) using 1
+    all_goals try rfl
     · field_simp; ring
     · convert Polynomial.hasDerivAt (4 + 4 * X (R := ℝ)) _ <;> norm_num
+      all_goals rfl
 
 lemma hasDerivAt_nF''₂ (hx : 0 < x) : HasDerivAt nF''₂ (nF''₃ x) x := by
   unfold nF''₂ nF''₃
   convert HasDerivAt.add
     (f := fun x ↦ -4 + 4/x) (f' := -4 / x^2) ?_
-    (HasDerivAt.const_mul _ (Real.hasDerivAt_log (ne_of_lt hx).symm)) using 1
-  convert HasDerivAt.add (hasDerivAt_const x (-4))
-    (HasDerivAt.const_mul 4 (hasDerivAtInv hx)) using 1
-  · ext _; rw [Pi.add_apply]; ring
+    (HasDerivAt.const_mul 4 (Real.hasDerivAt_log (ne_of_lt hx).symm)) using 1
+  · rfl
+  · rfl
+  · ext _; rw [Pi.add_apply]
   · ring
+  · convert HasDerivAt.add (hasDerivAt_const x (-4))
+      (HasDerivAt.const_mul 4 (hasDerivAtInv hx)) using 1
+    all_goals try rfl
+    · ext _; rw [Pi.add_apply]; ring
+    · ring
 
 lemma hasDerivAt_nF''₃ (hx : 0 < x) : HasDerivAt nF''₃ (nF''₄ x) x := by
   unfold nF''₃ nF''₄
   convert HasDerivAt.add (HasDerivAt.const_mul (-4) (hasDerivAtInvSq hx))
     (HasDerivAt.const_mul 4 (hasDerivAtInv hx)) using 1
+  · rfl
+  · rfl
   · ext _; rw [Pi.add_apply]; ring
   · ring
 
 lemma hasDerivAt_dF''₀ : HasDerivAt dF''₀ (dF''₁ x) x := by
   convert Polynomial.hasDerivAt (X - 4 * X^2 + 6 * X^3 - 4 * X^4 + X^5 : ℝ[X]) _ <;> norm_num
+  · rfl
   · unfold dF''₀; ring
   · unfold dF''₁; ring
 
 lemma hasDerivAt_dF''₁ : HasDerivAt dF''₁ (dF''₂ x) x := by
   convert Polynomial.hasDerivAt (1 - 8 * X (R := ℝ) + 18 * X^2 - 16 * X^3 + 5 * X^4) _ <;> norm_num
+  · rfl
   · unfold dF''₁; ring
   · unfold dF''₂; ring
 
 lemma hasDerivAt_dF''₂ : HasDerivAt dF''₂ (dF''₃ x) x := by
   convert Polynomial.hasDerivAt (-8 + 36 * X (R := ℝ) - 48 * X^2 + 20 * X^3 ) _ <;> norm_num
+  · rfl
   · unfold dF''₂; ring
   · unfold dF''₃; ring
 
 lemma hasDerivAt_dF''₃ : HasDerivAt dF''₃ (dF''₄ x) x := by
   convert Polynomial.hasDerivAt (36 - 96 * X (R := ℝ) + 60 * X^2) _ <;> norm_num
+  · rfl
   · unfold dF''₃; ring
   · unfold dF''₄; ring
 
@@ -779,6 +796,9 @@ lemma F''_continuousAt_one : ContinuousAt F'' 1 := by
 lemma hasDerivAt_F_on_S (hx : x ∈ S) : HasDerivAt F (F' x) x := by
   refine HasDerivAt.congr_on_open S_open hx ?_ F_on_S.symm
   convert HasDerivAt.div (hasDerivAt_nF₀ hx.1) hasDerivAt_dF₀ (dF₀_ne_zero_on_S hx) using 1
+  · rfl
+  · rfl
+  · rfl
   rw [F'_on_S hx]
   field_simp [dF₀_ne_zero_on_S hx, dF'₀_ne_zero_on_S hx]
   unfold dF₀ nF₀ dF'₀ nF'₀ nF₁ dF₁
@@ -787,6 +807,9 @@ lemma hasDerivAt_F_on_S (hx : x ∈ S) : HasDerivAt F (F' x) x := by
 lemma hasDerivAt_F'_on_S (hx : x ∈ S) : HasDerivAt F' (F'' x) x := by
   refine HasDerivAt.congr_on_open S_open hx ?_ F'_on_S.symm
   convert HasDerivAt.div (hasDerivAt_nF'₀ hx.1) hasDerivAt_dF'₀ (dF'₀_ne_zero_on_S hx) using 1
+  · rfl
+  · rfl
+  · rfl
   rw [F''_on_S hx]
   field_simp [dF'₀_ne_zero_on_S hx, dF''₀_ne_zero_on_S hx]
   unfold dF'₀ nF'₀ dF''₀ nF''₀ nF'₁ dF'₁
