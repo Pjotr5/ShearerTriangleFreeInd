@@ -545,9 +545,9 @@ private lemma independent_set_count_bound_step {f f' : ℝ → ℝ} {n : ℕ}
       _   ≥   𝔼 v, Real.exp (#V(G.induce {v}ᶜ) * f d(G.induce {v}ᶜ))
             + 𝔼 v, Real.exp (#V(G.induce (G.closedNeighborSet v)ᶜ)
                               * f d(G.induce (G.closedNeighborSet v)ᶜ)) := by
-        gcongr <;> rename_i v hv
-        · exact key {v} (Set.singleton_nonempty v)
-        · exact key _ closedNeighborSet_nonempty
+        gcongr <;> apply key
+        · exact Set.singleton_nonempty _
+        · exact closedNeighborSet_nonempty
       _   ≥   Real.exp (𝔼 v, #V(G.induce {v}ᶜ) * f d(G.induce {v}ᶜ))
             + Real.exp (𝔼 v, #V(G.induce (G.closedNeighborSet v)ᶜ)
                               * f d(G.induce (G.closedNeighborSet v)ᶜ)) := by
