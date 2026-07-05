@@ -342,10 +342,11 @@ lemma _root_.ConvexOn.map_expect_le {α : Type*} {t : Finset α} (ht : t.Nonempt
   exact hf.map_sum_le (fun _ _ ↦ inv_nonneg.2 hc.le)
     (by simp [sum_const, nsmul_eq_mul, mul_inv_cancel₀ hc.ne']) hmem
 
-/-- The exponential of an average is at most the average of the exponentials. -/
-lemma exp_expect_le_expect_exp (g : V → ℝ) (hV : Nonempty V) :
-    Real.exp (𝔼 v, g v) ≤ 𝔼 v, Real.exp (g v) :=
-  ConvexOn.map_expect_le (univ_nonempty_iff.2 hV) _ (fun _ _ ↦ Set.mem_univ _) convexOn_exp
+/-- The exponential of an average is at most the average of the exponentials
+(Jensen's inequality for `Real.exp`). -/
+lemma _root_.Real.exp_expect_le_expect_exp {ι : Type*} {t : Finset ι} (ht : t.Nonempty)
+    (g : ι → ℝ) : Real.exp (𝔼 i ∈ t, g i) ≤ 𝔼 i ∈ t, Real.exp (g i) :=
+  ConvexOn.map_expect_le ht _ (fun _ _ ↦ Set.mem_univ _) convexOn_exp
 
 
 variable (G) in
@@ -551,7 +552,7 @@ private lemma independent_set_count_bound_step {f f' : ℝ → ℝ} {n : ℕ}
       _   ≥   Real.exp (𝔼 v, #V(G.induce {v}ᶜ) * f d(G.induce {v}ᶜ))
             + Real.exp (𝔼 v, #V(G.induce (G.closedNeighborSet v)ᶜ)
                               * f d(G.induce (G.closedNeighborSet v)ᶜ)) := by
-        gcongr <;> exact exp_expect_le_expect_exp _ hV
+        gcongr <;> exact Real.exp_expect_le_expect_exp (univ_nonempty_iff.2 hV) _
       _   ≥   Real.exp (#V(G) * f d(G) + shearerError G f f' 1 d(G))
             + Real.exp (#V(G) * f d(G) + shearerError G f f' (d(G) + 1) (d(G) ^ 2)) := by
         gcongr
