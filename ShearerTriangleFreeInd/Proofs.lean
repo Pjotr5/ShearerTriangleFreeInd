@@ -90,12 +90,6 @@ lemma nonempty_of_averageDegree_pos (h : 0 < d(G)) : Nonempty V :=
   not_isEmpty_iff.mp fun hV ↦ h.ne' <| averageDegree_eq_zero_of_isEmpty hV
 
 
-lemma edgeFinset_eq_empty_iff_averageDegree_eq_zero : E(G) = ∅ ↔ d(G) = 0 := by
-  refine ⟨fun hE ↦ ?_, edgeFinset_eq_empty_of_averageDegree_eq_zero⟩
-  obtain rfl := edgeFinset_eq_empty.mp hE
-  simp [averageDegree]
-
-
 lemma cast_averageDegree : (d(G) : ℝ) = 𝔼 v, (G.degree v : ℝ) :=
   algebraMap.coe_expect (M := ℚ) _ _
 
@@ -111,10 +105,6 @@ omit [Fintype V] in
 lemma closedNeighborSet_nonempty : (G.closedNeighborSet v).Nonempty :=
   ⟨_, self_mem_closedNeighborSet⟩
 
-omit [Fintype V] in
-lemma adj_of_mem_closedNeighborSet_of_ne {u v : V} (hne : v ≠ u)
-    (hu : u ∈ G.closedNeighborSet v) : G.Adj v u :=
-  (Set.mem_insert_iff.1 hu).resolve_left hne.symm
 
 lemma card_vertexFinset_induce (S : Set V) [DecidablePred (· ∈ S)] :
     #V(G.induce S) = #S.toFinset := by
@@ -132,8 +122,6 @@ lemma card_vertexFinset_induce_compl_lt {S : Set V} (hS : S.Nonempty) :
 lemma card_vertexFinset_eq_zero_of_isEmpty (hV : IsEmpty V) : #V(G) = 0 :=
   Fintype.card_eq_zero_iff.2 hV
 
-omit [Fintype V] in
-lemma card_vertexFinset_induce_singleton (v : V) : #V(G.induce {v}) = 1 := Set.card_singleton v
 
 lemma card_toFinset_closedNeighborSet (v : V) :
     #(G.closedNeighborSet v).toFinset = G.degree v + 1 := by
@@ -143,10 +131,6 @@ lemma expect_card_closedNeighborSet (hV : Nonempty V) :
     𝔼 v, (#(G.closedNeighborSet v).toFinset : ℝ) = d(G) + 1 := by
   simp_rw [card_toFinset_closedNeighborSet, Nat.cast_add_one, expect_add_distrib,
     cast_averageDegree, expect_const univ_nonempty]
-
-lemma card_vertexFinset_induce_closedNeighborSet (v : V) :
-    #(V(G.induce (G.closedNeighborSet v))) = G.degree v + 1 :=
-  (card_vertexFinset_induce _).trans (card_toFinset_closedNeighborSet v)
 
 
 variable (G) in
@@ -236,7 +220,6 @@ lemma sq_averageDegree_le_expect_sq_degree : d(G) ^ 2 ≤ 𝔼 v, (G.degree v : 
   simpa only [averageDegree_def, expect_eq_sum_div_card] using sum_div_card_sq_le_sum_sq_div_card
 
 
-
 lemma bot_mem_indepSetFinsetAll : ⊥ ∈ ℐ(G) := mem_indepSetFinsetAll_iff.mpr <| Set.pairwise_empty _
 
 lemma indepSetFinsetAll_nonempty : ℐ(G).Nonempty := ⟨⊥, bot_mem_indepSetFinsetAll⟩
@@ -248,9 +231,6 @@ lemma mem_indepSetFinsetAll_of_subset {S₁ S₂ : Set V} (hind : S₁ ∈ ℐ(G
 lemma mem_indepSetFinsetAll_induce_iff (S : Set V) (I : Set S) :
     I ∈ ℐ(G.induce S) ↔ Subtype.val '' I ∈ ℐ(G) := by simp [mem_indepSetFinsetAll_iff, Set.Pairwise]
 
-lemma mem_indepSetFinsetAll_induce_iff_of_subset {S I : Set V} (hIS : I ⊆ S) :
-    {x | x.1 ∈ I} ∈ ℐ(G.induce S) ↔ I ∈ ℐ(G) := by
-  rw [mem_indepSetFinsetAll_induce_iff, Subtype.coe_image_of_subset hIS]
 
 /-- The image under `Subtype.val` as an embedding `Set S ↪ Set V`. -/
 def embeddingOfSubsetSubtype (S : Set V) : Set S ↪ Set V :=
