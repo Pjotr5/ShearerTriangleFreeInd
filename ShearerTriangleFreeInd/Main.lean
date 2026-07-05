@@ -19,9 +19,9 @@ theorem triangle_free_independence_bound {V : Type} [Fintype V] {G : SimpleGraph
   · exact fun x hx ↦ F'_nonpositive hx
   · intro V' _ G'
     by_cases hV : Nonempty V'
-    · rw [extra_rewrite_aux hV]
+    · rw [shearerError_add_one_sq hV]
       exact le_of_eq (by convert (F_diff_equation (x := d(G'))).symm using 1; all_goals rfl)
-    · rw [extra_IsEmpty (not_nonempty_iff.1 hV)]
+    · rw [shearerError_of_isEmpty (not_nonempty_iff.1 hV)]
       norm_num
 
 open Classical Finset in
@@ -41,10 +41,10 @@ theorem triangle_free_independence_count_bound {V : Type} [Fintype V] {G : Simpl
   · exact fun x hx ↦ G'_nonpositive (le_of_lt hx)
   · intro V' _ G'
     by_cases hV : Nonempty V'
-    · rw [extra_rewrite_aux hV, extra_rewrite_aux' hV]
+    · rw [shearerError_add_one_sq hV, shearerError_one hV]
       convert le_of_lt (goal_bound (Rat.cast_nonneg.2 (averageDegree_nonneg (G := G')))) using 1
       all_goals rfl
-    · repeat rw [extra_IsEmpty (not_nonempty_iff.1 hV)]
+    · repeat rw [shearerError_of_isEmpty (not_nonempty_iff.1 hV)]
       norm_num
 
 end SimpleGraph
