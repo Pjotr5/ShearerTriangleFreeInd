@@ -528,6 +528,13 @@ private lemma independent_set_count_bound_step {f f' : ℝ → ℝ} {n : ℕ}
     : #ℐ(G) ≥ Real.exp (#V(G) * f d(G)) := by
   by_cases hV : Nonempty V
   · rw [← expect_const (univ_nonempty_iff.mpr hV) (#ℐ(G) : ℝ)]
+    have key (S : Set V) (hS : S.Nonempty) :
+        (#ℐ(G.induce Sᶜ) : ℝ) ≥ Real.exp (#V(G.induce Sᶜ) * f d(G.induce Sᶜ)) := by
+      apply hn (#V(G.induce Sᶜ))
+      · rw [hcard]
+        exact card_vertexFinset_induce_compl_lt hS
+      · rfl
+      · exact CliqueFree.comap ⟨Copy.induce G _⟩ hT
     calc
       𝔼 v, (#ℐ(G) : ℝ)
             = 𝔼 v, (#ℐ(G.induce {v}ᶜ) + #ℐ(G.induce (G.closedNeighborSet v)ᶜ) : ℝ ) := by
@@ -539,16 +546,8 @@ private lemma independent_set_count_bound_step {f f' : ℝ → ℝ} {n : ℕ}
             + 𝔼 v, Real.exp (#V(G.induce (G.closedNeighborSet v)ᶜ)
                               * f d(G.induce (G.closedNeighborSet v)ᶜ)) := by
         gcongr <;> rename_i v hv
-        · apply hn (#V(G.induce {v}ᶜ))
-          · rw [hcard]
-            refine card_vertexFinset_induce_compl_lt ⟨v, rfl⟩
-          · rfl
-          · exact CliqueFree.comap ⟨Copy.induce G _⟩ hT
-        · apply hn (#V(G.induce (G.closedNeighborSet v)ᶜ))
-          · rw [hcard]
-            refine card_vertexFinset_induce_compl_lt closedNeighborSet_nonempty
-          · rfl
-          · exact CliqueFree.comap ⟨Copy.induce G _⟩ hT
+        · exact key {v} (Set.singleton_nonempty v)
+        · exact key _ closedNeighborSet_nonempty
       _   ≥   Real.exp (𝔼 v, #V(G.induce {v}ᶜ) * f d(G.induce {v}ᶜ))
             + Real.exp (𝔼 v, #V(G.induce (G.closedNeighborSet v)ᶜ)
                               * f d(G.induce (G.closedNeighborSet v)ᶜ)) := by
