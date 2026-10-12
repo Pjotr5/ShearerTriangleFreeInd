@@ -126,7 +126,13 @@ lemma card_vertexFinset_eq_zero_of_isEmpty (hV : IsEmpty V) : #V(G) = 0 :=
 
 lemma card_toFinset_closedNeighborSet (v : V) :
     #(G.closedNeighborSet v).toFinset = G.degree v + 1 := by
-  simp [closedNeighborSet, ← neighborFinset_eq_filter]
+  classical
+  have h : (G.closedNeighborSet v).toFinset = insert v (G.neighborFinset v) := by
+    ext w
+    rw [Set.mem_toFinset]
+    simp [closedNeighborSet]
+  rw [h, card_insert_of_notMem (G.notMem_neighborFinset_self v),
+    card_neighborFinset_eq_degree]
 
 lemma expect_card_closedNeighborSet (hV : Nonempty V) :
     𝔼 v, (#(G.closedNeighborSet v).toFinset : ℝ) = d(G) + 1 := by
@@ -182,7 +188,7 @@ lemma mem_edgeIncidenceFinset_closedNeighborSet_iff (e : Sym2 V) (v : V) :
   induction e with
   | _ a b =>
     simp only [edgeIncidenceFinset, mem_filter, mem_edgeFinset, mem_edgeSet, closedNeighborSet,
-      Set.mem_insert_iff, mem_neighborSet, incidenceSet, Set.mem_setOf_eq, Sym2.mem_iff]
+      Set.mem_insert_iff, mem_neighborSet, incidenceSet, Set.mem_ofPred_eq, Sym2.mem_iff]
     grind [adj_comm]
 
 lemma edgeIncidenceFinset_closedNeighborSet (v : V) :
@@ -274,7 +280,14 @@ lemma insert_mem_indepSetFinsetAll_iff {S : Set V} :
 lemma subset_compl_closedNeighborSet_iff_insert_mem_indepSetFinsetAll {v : V} {I : Set V}
     (hI : I ∈ ℐ(G)) :
     I ⊆ (G.closedNeighborSet v)ᶜ ↔ v ∉ I ∧ insert v I ∈ ℐ(G) := by
-  grind [insert_mem_indepSetFinsetAll_iff, closedNeighborSet, mem_neighborSet]
+  rw [insert_mem_indepSetFinsetAll_iff]
+  simp only [hI, true_and, Set.subset_def, closedNeighborSet, Set.mem_compl_iff,
+    Set.mem_insert_iff, mem_neighborSet, not_or]
+  constructor
+  · intro h
+    exact ⟨fun hv ↦ (h v hv).1 rfl, fun u hu ↦ (h u hu).2⟩
+  · rintro ⟨hv, hI'⟩ u hu
+    exact ⟨fun h ↦ hv (h ▸ hu), hI' u hu⟩
 
 omit [Fintype V] in
 lemma indepNum_induce_compl_closedNeighborSet_add_one_le [Finite V] (v : V) :
@@ -336,11 +349,12 @@ noncomputable def shearerError (f f' : ℝ → ℝ) (a b : ℝ) : ℝ :=
   if Nonempty V then a * (d(G) * f' d(G) - f d(G)) + b * (-2 * f' d(G)) else 0
 
 lemma shearerError_of_nonempty {f f' : ℝ → ℝ} {a b : ℝ} (hV : Nonempty V) :
-    shearerError G f f' a b = a * (d(G) * f' d(G) - f d(G)) + b * (-2 * f' d(G)) := if_pos hV
+    shearerError G f f' a b = a * (d(G) * f' d(G) - f d(G)) + b * (-2 * f' d(G)) :=
+  ite_eq_left hV
 
 lemma shearerError_of_isEmpty {f f' : ℝ → ℝ} {a b : ℝ} (hV : IsEmpty V) :
     shearerError G f f' a b = 0 :=
-  if_neg (not_nonempty_iff.2 hV)
+  ite_eq_right (not_nonempty_iff.2 hV)
 
 lemma shearerError_add_one_sq {f f' : ℝ → ℝ} (hV : Nonempty V) :
     G.shearerError f f' (d(G) + 1) (d(G) ^ 2) =

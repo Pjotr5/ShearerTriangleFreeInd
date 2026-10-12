@@ -39,7 +39,7 @@ The two main statements can be found in the file `ShearerTriangleFreeInd/Main.le
 
 ## Building and checking
 
-The project pins Lean and Mathlib to **4.31.0**. With
+The project pins Lean and Mathlib to **4.34.1**. With
 [Elan](https://github.com/leanprover/elan) installed, run:
 
 ```sh
@@ -51,7 +51,8 @@ lake env lean scripts/CheckAxioms.lean
 The final command checks that both main theorems depend only on the standard
 Lean axioms `propext`, `Classical.choice`, and `Quot.sound`. It fails if either
 theorem depends on an unfinished proof (`sorryAx`) or another axiom. CI runs
-the same check after building the project.
+the same check after building the project. API documentation is published from
+`main` after a push.
 
 ## References
 - [Shearer1983] J. B. Shearer, *A note on the independence number of

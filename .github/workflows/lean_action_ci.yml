@@ -21,3 +21,4 @@ jobs:
       - name: Check main theorem axioms
         run: lake env lean scripts/CheckAxioms.lean
       - uses: leanprover-community/docgen-action@v1
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'

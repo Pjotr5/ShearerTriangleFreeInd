@@ -23,14 +23,13 @@ theorem triangle_free_independence_bound {V : Type} [Fintype V] {G : SimpleGraph
         (fun x ↦
           if x = 1 then 1/2
           else          (x * Real.log x - x + 1) / (x - 1)^2) (G.averageDegree) := by
-  convert Shearer_bound (f' := F') hT ?_ ?_ ?_
-  · rfl
+  refine Shearer_bound (f := F) (f' := F') hT ?_ ?_ ?_
   · exact fun x y hx hy ↦ F_convex_inequality hx hy
   · exact fun x hx ↦ F'_nonpositive hx
   · intro V' _ G'
     by_cases hV : Nonempty V'
     · rw [shearerError_add_one_sq hV]
-      exact le_of_eq (by convert (F_diff_equation (x := d(G'))).symm using 1; all_goals rfl)
+      exact le_of_eq (by convert (F_diff_equation (x := d(G'))).symm using 1)
     · rw [shearerError_of_isEmpty (not_nonempty_iff.1 hV)]
       norm_num
 
@@ -44,9 +43,7 @@ theorem triangle_free_independence_count_bound {V : Type} [Fintype V] {G : Simpl
             else          ((1 / 2) * (W x)^2 + W x - ((1 / 2) * (W 2)^2 + W 2)) / (x - 2))
               (G.averageDegree)
            ) := by
-  convert independent_set_count_bound (f' := G') hT ?_ ?_ ?_
-  · rfl
-  · rfl
+  refine independent_set_count_bound (f := _root_.G) (f' := G') hT ?_ ?_ ?_
   · exact fun x y hx hy ↦ G_convex_inequality hx (le_of_lt hy)
   · exact fun x hx ↦ G'_nonpositive (le_of_lt hx)
   · intro V' _ G'
