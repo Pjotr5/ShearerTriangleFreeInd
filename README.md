@@ -37,6 +37,23 @@ The two main statements can be found in the file `ShearerTriangleFreeInd/Main.le
   proofs of both bounds.
 - `ShearerTriangleFreeInd/Main.lean` – Contains only the two main statements.
 
+## Building and checking
+
+The project pins Lean and Mathlib to **4.34.1**. With
+[Elan](https://github.com/leanprover/elan) installed, run:
+
+```sh
+lake exe cache get
+lake build
+lake env lean scripts/CheckAxioms.lean
+```
+
+The final command checks that both main theorems depend only on the standard
+Lean axioms `propext`, `Classical.choice`, and `Quot.sound`. It fails if either
+theorem depends on an unfinished proof (`sorryAx`) or another axiom. CI runs
+the same check after building the project. API documentation is published from
+`main` after a push.
+
 ## References
 - [Shearer1983] J. B. Shearer, *A note on the independence number of
   triangle-free graphs*, Discrete Mathematics 46 (1983), 83–87.

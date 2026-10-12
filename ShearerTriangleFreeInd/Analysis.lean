@@ -56,8 +56,8 @@ section General
 -- Extension lemma for HasDerivAt
 lemma HasDerivAt.congr_on_open {f'x : ℝ} (hU_open : IsOpen U) (hx : x ∈ U)
     (hf : HasDerivAt f f'x x) (heq : U.EqOn f g) : HasDerivAt g f'x x :=
-  HasDerivWithinAt.hasDerivAt (HasDerivWithinAt.congr (HasDerivAt.hasDerivWithinAt hf)
-    (fun _ a ↦ (heq a).symm) (heq hx).symm) (IsOpen.mem_nhds hU_open hx)
+  hf.congr_of_eventuallyEq (Filter.eventuallyEq_of_mem (hU_open.mem_nhds hx)
+    fun _ hy ↦ (heq hy).symm)
 
 -- Main extension theorem for derivatives
 theorem HasDerivAt.extend_to_singularity (hU_open : IsOpen U) (hx : x ∈ U)
@@ -128,11 +128,6 @@ lemma pos_of_dist_one_lt_one (hx : dist x 1 < 1) : 0 < x := by
   rw [Real.dist_eq, abs_sub_lt_iff] at hx
   linarith
 
--- Extract property from neighborhood
-lemma eventually_nhds_self {p : ℝ → Prop} (h : ∀ᶠ (y : ℝ) in nhds x, p y) : p x := by
-  have ⟨_, hε, hall⟩ := (Metric.eventually_nhds_iff_ball.1 h)
-  exact hall _ (Metric.mem_ball_self hε)
-
 -- Propagate zeros to derivatives
 lemma frequently_deriv_eq_zero_of_frequently_eq_zero
     (hx : g x = 0)
@@ -191,34 +186,13 @@ lemma ContinuousAt.eq_of_frequently_eq {g : ℝ → ℝ} {a x : ℝ}
 lemma ConvexOn.tangent_line_le (hgc : ConvexOn ℝ U g) (hx : x ∈ U) (hy : y ∈ U)
   (hg' : HasDerivAt g (g' y) y) : g y + g' y * (x - y) ≤ g x := by
   rcases lt_trichotomy x y with hxy | hxy | hxy
-  · rw [←le_sub_iff_add_le', ←neg_le_neg_iff, neg_sub, mul_comm, neg_mul_eq_neg_mul, neg_sub,
-          ←div_le_iff₀' (by linarith), div_eq_inv_mul]
-    convert ConvexOn.slope_le_of_hasDerivAt hgc hx hy hxy hg' using 1
+  · have h := hgc.slope_le_of_hasDerivAt hx hy hxy hg'
+    rw [slope_def_field, div_le_iff₀ (by linarith)] at h
+    linarith
   · simp only [hxy, sub_self, mul_zero, add_zero, le_refl]
-  · let φ : ℝ → ℝ   := fun x ↦ -x
-    have hgmc   : ConvexOn ℝ (φ '' U) (g ∘ φ) := by
-      refine ⟨Convex.is_linear_image hgc.1 (IsLinearMap.isLinearMap_neg), ?_⟩
-      intro mv ⟨v, hvS, hv⟩ mw ⟨w, hwS, hw⟩ a b hap hbp hab
-      rw [←hv, ←hw]
-      convert hgc.2 hvS hwS hap hbp hab using 1 <;> unfold φ
-      · simp only [Function.comp_apply, smul_eq_mul, mul_neg, neg_add, neg_neg]
-      · simp only [Function.comp_apply, neg_neg, smul_eq_mul]
-    have hgm'c  : HasDerivAt (g ∘ φ) (φ (g' y)) (φ y) := by
-      convert HasDerivAt.scomp (φ y) (h := φ) (h' := -1) (g₁ := g) (g₁' := g' y) ?_ ?_ using 1
-      · simp only [smul_eq_mul, neg_mul, one_mul, φ]
-      · convert hg'
-        simp [φ]
-      · exact hasDerivAt_neg' _
-    rw [←le_sub_iff_add_le]
-    apply (tsub_le_iff_left (c := - (g' y * (x - y)))).1
-    rw [neg_mul_eq_neg_mul, ←mul_inv_le_iff₀ (by linarith), mul_comm]
-    convert ConvexOn.slope_le_of_hasDerivAt (x := -x) hgmc ?_ ?_ ?_ hgm'c using 1
-    · rw [slope, sub_neg_eq_add, add_comm]
-      congr 1
-      simp [φ]
-    · exact (Set.mem_image _ _ _).2 ⟨x, hx, rfl⟩
-    · exact (Set.mem_image _ _ _).2 ⟨y, hy, rfl⟩
-    · exact neg_lt_neg_iff.mpr hxy
+  · have h := hgc.le_slope_of_hasDerivAt hy hx hxy hg'
+    rw [slope_def_field, le_div_iff₀ (by linarith)] at h
+    linarith
 
 /-!
 ### L'Hôpital's rule
@@ -247,9 +221,9 @@ lemma ContinuousAt.lhopital_iterated (n : ℕ) (ns ds : List (ℝ → ℝ))
     ext; split <;> simp_all only [ne_eq]
   | succ n ih =>
     intro ns ds len_ns len_ds hnDer hdDer hnZero hdZero hnC hdC hnZ
-    rw [←continuousWithinAt_compl_self, ContinuousWithinAt, if_pos rfl]
+    rw [←continuousWithinAt_compl_self, ContinuousWithinAt, ite_eq_left rfl]
     apply Filter.Tendsto.congr' (f₁ := fun y ↦ (ns[0] y) / (ds[0] y) )
-      (eventually_nhdsWithin_of_forall fun y hy ↦ (if_neg hy).symm)
+      (eventually_nhdsWithin_of_forall fun y hy ↦ (ite_eq_right hy).symm)
     have hn : 0 < n + 1 := Nat.zero_lt_succ _
     have hn_tail : ns.tail.length = n + 1 := by
       rw [List.length_tail, len_ns, add_tsub_cancel_right, Nat.add_left_cancel_iff]
@@ -271,12 +245,10 @@ lemma ContinuousAt.lhopital_iterated (n : ℕ) (ns ds : List (ℝ → ℝ))
       exact hnZ (ContinuousAt.eq_of_frequently_eq hInd hdC)
     · rw [←(hnZero 0 hn)]
       refine continuousWithinAt_compl_self.2 ?_
-      have this := (eventually_nhds_self (hnDer 0 hn))
-      exact HasDerivAt.continuousAt this
+      exact HasDerivAt.continuousAt (hnDer 0 hn).self_of_nhds
     · rw [←(hdZero 0 hn)]
       refine continuousWithinAt_compl_self.2 ?_
-      have this := (eventually_nhds_self (hdDer 0 hn))
-      exact HasDerivAt.continuousAt this
+      exact HasDerivAt.continuousAt (hdDer 0 hn).self_of_nhds
     · specialize ih ns.tail ds.tail hn_tail hd_tail ?_ ?_ ?_ ?_ ?_ ?_ ?_
       · intro k hk
         convert hnDer (k+1) (by linarith) using 3
@@ -291,13 +263,13 @@ lemma ContinuousAt.lhopital_iterated (n : ℕ) (ns ds : List (ℝ → ℝ))
       · convert hnC using 1; simp
       · convert hdC using 1; simp
       · convert hnZ using 1; simp
-      · rw [←continuousWithinAt_compl_self, ContinuousWithinAt, if_pos rfl] at ih
+      · rw [←continuousWithinAt_compl_self, ContinuousWithinAt, ite_eq_left rfl] at ih
         convert Filter.Tendsto.congr' ?_ ih using 2
         · simp
         · refine eventually_nhdsWithin_of_forall ?_
-          intro _ hy
-          convert if_neg hy using 1
-          simp
+          intro y hy
+          rw [Set.mem_compl_iff, Set.mem_singleton_iff] at hy
+          simp [ite_eq_right hy]
 
 end General
 
@@ -381,18 +353,18 @@ lemma pos_not_in_S_eq_one (hx_pos : 0 < x) (hx_not_in_S : x ∉ S) : x = 1 := by
 -/
 
 
-lemma F_not_one (hx : x ≠ 1) : F x   = nF₀ x / dF₀ x       := if_neg hx
-lemma F'_not_one (hx : x ≠ 1) : F' x  = nF'₀ x / dF'₀ x     := if_neg hx
-lemma F''_not_one (hx : x ≠ 1) : F'' x = nF''₀ x / dF''₀ x   := if_neg hx
+lemma F_not_one (hx : x ≠ 1) : F x   = nF₀ x / dF₀ x       := ite_eq_right hx
+lemma F'_not_one (hx : x ≠ 1) : F' x  = nF'₀ x / dF'₀ x     := ite_eq_right hx
+lemma F''_not_one (hx : x ≠ 1) : F'' x = nF''₀ x / dF''₀ x   := ite_eq_right hx
 
 lemma F_at_zero : F 0    = 1  := by simp [F]
-lemma F_at_one : F 1    = 1/2  := if_pos rfl
-lemma F'_at_one : F' 1   = -1/6 := if_pos rfl
-lemma F''_at_one : F'' 1  = 1/6  := if_pos rfl
+lemma F_at_one : F 1    = 1/2  := ite_eq_left rfl
+lemma F'_at_one : F' 1   = -1/6 := ite_eq_left rfl
+lemma F''_at_one : F'' 1  = 1/6  := ite_eq_left rfl
 
-lemma F_on_S : S.EqOn F    (fun x ↦ nF₀ x    / dF₀ x)    := fun _ hx ↦ if_neg hx.2
-lemma F'_on_S : S.EqOn F'   (fun x ↦ nF'₀ x   / dF'₀ x)   := fun _ hx ↦ if_neg hx.2
-lemma F''_on_S : S.EqOn F''  (fun x ↦ nF''₀ x  / dF''₀ x)  := fun _ hx ↦ if_neg hx.2
+lemma F_on_S : S.EqOn F    (fun x ↦ nF₀ x    / dF₀ x)    := fun _ hx ↦ ite_eq_right hx.2
+lemma F'_on_S : S.EqOn F'   (fun x ↦ nF'₀ x   / dF'₀ x)   := fun _ hx ↦ ite_eq_right hx.2
+lemma F''_on_S : S.EqOn F''  (fun x ↦ nF''₀ x  / dF''₀ x)  := fun _ hx ↦ ite_eq_right hx.2
 
 /-!
 ### Derivatives of the numerators and denominators of F, F' and F''
@@ -426,7 +398,7 @@ lemma hasDerivAt_nF₀ (hx : 0 < x) : HasDerivAt nF₀ (nF₁ x) x := by
 
 lemma hasDerivAt_nF₁ (hx : 0 < x) : HasDerivAt nF₁ (nF₂ x) x := by
   unfold nF₂
-  convert Real.hasDerivAt_log (ne_of_lt hx).symm using 1
+  convert! Real.hasDerivAt_log (ne_of_lt hx).symm using 1
   exact one_div x
 
 lemma hasDerivAt_dF₀ : HasDerivAt dF₀ (dF₁ x) x := by
@@ -514,10 +486,10 @@ lemma hasDerivAt_nF''₁ (hx : 0 < x) : HasDerivAt nF''₁ (nF''₂ x) x := by
 
 lemma hasDerivAt_nF''₂ (hx : 0 < x) : HasDerivAt nF''₂ (nF''₃ x) x := by
   unfold nF''₂ nF''₃
-  convert HasDerivAt.add
+  convert! HasDerivAt.add
     (f := fun x ↦ -4 + 4/x) (f' := -4 / x^2) ?_
-    (HasDerivAt.const_mul _ (Real.hasDerivAt_log (ne_of_lt hx).symm)) using 1
-  convert HasDerivAt.add (hasDerivAt_const x (-4))
+    (HasDerivAt.const_mul 4 (Real.hasDerivAt_log (ne_of_lt hx).symm)) using 1
+  convert! HasDerivAt.add (hasDerivAt_const x (-4))
     (HasDerivAt.const_mul 4 (hasDerivAtInv hx)) using 1
   · ext _; rw [Pi.add_apply]; ring
   · ring
@@ -825,7 +797,8 @@ lemma F_Continuous : Continuous F  := by
     exact ContinuousWithinAt.congr (f := fun x ↦ nF₀ x / dF₀ x) (
       ContinuousWithinAt.div (ContinuousAt.continuousWithinAt ContinuousAt_nF₀)
         (ContinuousAt.continuousWithinAt ContinuousAt_dF₀ ) (pow_ne_zero 2 (sub_ne_zero_of_ne hx)))
-        (fun _ hy ↦ by simp only [F, if_neg hy, nF₀, dF₀]) (by simp only [F, if_neg hx, nF₀, dF₀])
+        (fun _ hy ↦ by simp only [F, ite_eq_right hy, nF₀, dF₀])
+        (by simp only [F, ite_eq_right hx, nF₀, dF₀])
 
 lemma F_ContinuousAt (hx : 0 < x) : ContinuousAt F x   := HasDerivAt.continuousAt (hasDerivAt_F hx)
 lemma F'_ContinuousAt (hx : 0 < x) : ContinuousAt F' x := HasDerivAt.continuousAt (hasDerivAt_F' hx)

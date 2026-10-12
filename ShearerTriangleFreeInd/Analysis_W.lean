@@ -1,11 +1,10 @@
 import Mathlib
 import ShearerTriangleFreeInd.Analysis
 
+/-!
+# Lambert W and the independent set counting bound
 
-
-
-/-
-## Definition of LambertW
+Construct Lambert W and establish the analytical properties used in the counting bound.
 -/
 
 open Real
@@ -22,7 +21,7 @@ lemma xexp_neg (hx : x < 0) : xexp x < 0 := mul_neg_of_neg_of_pos hx (exp_pos _)
 
 lemma hasDerivAt_xexp : HasDerivAt xexp ((1 + x) * exp x) x := by
   convert HasDerivAt.mul (hasDerivAt_id' x) (Real.hasDerivAt_exp x) using 1
-  ring
+  all_goals first | rfl | ring
 
 lemma continuous_xexp : Continuous xexp := Continuous.mul continuous_id' continuous_exp
 
@@ -76,7 +75,7 @@ lemma coe_Ici {x : Set.Ici y} : y ≤ x := x.2
 
 noncomputable def W : ℝ → ℝ := fun x ↦ if hx : xexp (-1) ≤ x then xexpOrderIso.symm ⟨x, hx⟩ else 0
 
-lemma W_rw (hx : xexp (-1) ≤ x) : W x = xexpOrderIso.symm ⟨x, hx⟩ := dif_pos hx
+lemma W_rw (hx : xexp (-1) ≤ x) : W x = xexpOrderIso.symm ⟨x, hx⟩ := dite_eq_left hx
 
 lemma W_EqOn : Set.EqOn (α := Set.Ici (xexp (-1))) (fun x ↦ W x.1) (fun x ↦ xexpOrderIso.symm x)
   Set.univ := by
@@ -87,11 +86,11 @@ lemma neg_one_le_W (hx : xexp (-1) ≤ x) : -1 ≤ W x := by
   rw [W_rw hx]
   exact coe_Ici
 
-lemma W_coe (a : Set.Ici (xexp (-1))) : W a.1 = xexpOrderIso.symm a := dif_pos a.2
+lemma W_coe (a : Set.Ici (xexp (-1))) : W a.1 = xexpOrderIso.symm a := dite_eq_left a.2
 
 lemma xexp_W (hx : xexp (-1) ≤ x) : xexp (W x) = x := by
-  rw [W_rw hx, ←(coe_xexpOrderIso_apply ?_), OrderIso.apply_symm_apply, Subtype.coe_mk]
-  exact coe_Ici
+  rw [W_rw hx]
+  exact congrArg Subtype.val (xexpOrderIso.apply_symm_apply ⟨x, hx⟩)
 
 lemma StrictMonoOn_W : StrictMonoOn W (Set.Ici (xexp (-1))) := by
   intro _ hx _ hy hxy
@@ -129,7 +128,7 @@ lemma W_affine_combo_pos {a b : ℝ} (hx : xexp (-1) < x) (ha : 0 < a)
     (hb : a ≤ b) : 0 < a * W x + b := by
   convert Right.add_pos_of_pos_of_nonneg
     (mul_pos ha (W_add_one_pos hx)) (sub_nonneg_of_le hb) using 1
-  ring
+  all_goals first | rfl | ring
 
 lemma W_neg_at_neg (hx : xexp (-1) ≤ x) (hx_neg : x < 0) : W x < 0 := by
   rw [←W_zero]
@@ -172,8 +171,8 @@ lemma log_sub_loglog_lt_W (hx : xexp 1 < x) : log x - log (log x) < W x := by
   refine div_lt_div_of_pos_left (by linarith) (W_pos_at_pos (by linarith)) (W_lt_log hx)
 
 lemma continuousOn_W : ContinuousOn W (Set.Ici (xexp (-1))) := by
-  simp +unfoldPartialApp only [continuousOn_iff_continuous_restrict, Set.restrict, W_coe]
-  exact Continuous.subtype_val (OrderIso.continuous _)
+  rw [continuousOn_iff_continuous_domRestrict]
+  exact xexpOrderIso.symm.continuous.subtype_val.congr (fun a ↦ (W_coe a).symm)
 
 lemma hasDerivAt_W (hx : xexp (-1) < x) : HasDerivAt W (exp (-W x) / (1 + W x)) x := by
   convert HasDerivAt.of_local_left_inverse
@@ -243,6 +242,7 @@ lemma continuousOn_P : ContinuousOn P D := by
 lemma hasDerivAt_P (hx : x ∈ Di) : HasDerivAt P (P' x) x := by
   convert HasDerivAt.comp x (Real.hasDerivAt_exp (-W x))
     (HasDerivAt.fun_neg (hasDerivAt_W₀ hx)) using 1
+  all_goals try rfl
   rw [mul_comm]; rfl
 
 lemma continuousAt_P (hx : x ∈ Di) : ContinuousAt P x :=
@@ -251,6 +251,7 @@ lemma continuousAt_P (hx : x ∈ Di) : ContinuousAt P x :=
 lemma hasDerivAt_W' (hx : x ∈ Di) : HasDerivAt W' (W'' x) x := by
   convert HasDerivAt.div (hasDerivAt_P hx) (HasDerivAt.add_const 1 (hasDerivAt_W₀ hx))
     (W_add_one_nonzero hx) using 1
+  all_goals try rfl
   unfold W'' P' W'
   field_simp [W_add_one_nonzero hx]
   ring
@@ -260,6 +261,7 @@ lemma continuousAt_W' (hx : x ∈ Di) : ContinuousAt W' x :=
 
 lemma hasDerivAt_P' (hx : x ∈ Di) : HasDerivAt P' (P'' x) x := by
   convert HasDerivAt.mul (HasDerivAt.fun_neg (hasDerivAt_W' hx)) (hasDerivAt_P hx) using 1
+  all_goals try rfl
   unfold P'' W'' P' W'
   field_simp [W_add_one_nonzero hx]
   ring
@@ -309,15 +311,7 @@ lemma image_affine_uIcc (a b c d : ℝ) :
   rw [Set.image_const_mul_uIcc, Set.image_add_const_uIcc]
 
 lemma affine_continuous (a b : ℝ) : Continuous (a * · + b) :=
-  Continuous.add (continuous_mul_left _) continuous_const
-
--- Probably not necessary.
-lemma uIcc_convexHull (a b : ℝ) : convexHull ℝ {a, b} = Set.uIcc a b :=
-  Set.Subset.antisymm (convexHull_min
-    (Set.pair_subset (Set.left_mem_uIcc) (Set.right_mem_uIcc)) (convex_uIcc _ _))
-    (Set.OrdConnected.uIcc_subset (Convex.ordConnected (convex_convexHull _ _))
-    (mem_convexHull_iff.mpr (fun _ h _ ↦ h (Set.mem_insert _ _)))
-    (mem_convexHull_iff.mpr (fun _ h _ ↦ h (Set.mem_insert_of_mem _ rfl))))
+  Continuous.add (continuous_const_mul _) continuous_const
 
 lemma uIcc_sub_connected {a b : ℝ} {U : Set ℝ} (hU : IsConnected U) (ha : a ∈ U) (hb : b ∈ U) :
     Set.uIcc a b ⊆ U :=
@@ -338,12 +332,13 @@ lemma IntAverage_eq (a b : ℝ) (g : ℝ → ℝ) (hCont : ContinuousOn g (Set.u
     · (expose_names; exact sub_ne_zero_of_ne h)
     · rw [←intervalIntegral.integral_mul_const]
       symm
-      convert intervalIntegral.integral_comp_mul_deriv'
-        (f := fun t ↦ (b - a)*t + a) ?_ ?_ ?_ using 1
+      convert intervalIntegral.integral_comp_mul_deriv' (a := 0) (b := 1)
+        (f := fun t ↦ (b - a)*t + a) (f' := fun _ ↦ b - a) (g := g) ?_ ?_ ?_ using 1
       · simp
+      · norm_num
       · intro _ _
         rw [hasDerivAt_add_const_iff]
-        convert hasDerivAt_mul_const (b-a) using 1;
+        convert hasDerivAt_mul_const (b-a) using 1
         ext; ring
       · exact continuousOn_const
       · convert hCont
@@ -446,21 +441,21 @@ def ddnG' : ℝ → ℝ := fun x ↦ P'' x * (x - 2) + P' x
 
 lemma ddnG'_at_two : ddnG' 2 = P' 2 := by rw [ddnG', sub_self, mul_zero, zero_add]
 
-lemma G_rw (hx : x ≠ 2) : G x = nG x / (x - 2) := if_neg hx
-lemma G_two_rw : G 2 = P 2 := if_pos rfl
+lemma G_rw (hx : x ≠ 2) : G x = nG x / (x - 2) := ite_eq_right hx
+lemma G_two_rw : G 2 = P 2 := ite_eq_left rfl
 
 lemma G'_rw (hx : x ≠ 2) : G' x = (P x - G x) / (x - 2) := by
   field_simp [(sub_ne_zero_of_ne hx)]
-  rw [G', if_neg hx, G_rw hx]
+  rw [G', ite_eq_right hx, G_rw hx]
   field_simp [(sub_ne_zero_of_ne hx)]
 
-lemma G'_rw' (hx : x ≠ 2) : G' x = nG' x / (x - 2)^2 := if_neg hx
+lemma G'_rw' (hx : x ≠ 2) : G' x = nG' x / (x - 2)^2 := ite_eq_right hx
 
-lemma G'_two_rw : G' 2 = P' 2 / 2 := if_pos rfl
+lemma G'_two_rw : G' 2 = P' 2 / 2 := ite_eq_left rfl
 
 lemma G_diff_equation : G x + (x - 2) * G' x = P x := by
   by_cases hx : x = 2
-  · rw [hx, sub_self, zero_mul, add_zero, G, if_pos rfl]
+  · rw [hx, sub_self, zero_mul, add_zero, G, ite_eq_left rfl]
     rfl
   · rw [G'_rw hx, mul_div_cancel₀ _ (sub_ne_zero_of_ne hx)]
     ring
@@ -491,6 +486,7 @@ lemma G_int_eq_G : Set.EqOn G_int G Di := by
   · rw [interval_average_eq_div]
     congr 1
     convert intervalIntegral.integral_eq_sub_of_hasDerivAt (f := P_prim) (f' := P) ?_ ?_ using 1
+    · rfl
     · intro _ ht
       apply HasDerivAt_P_prim
       exact lt_mem_uIcc two_mem_domain_interior hx ht
@@ -514,8 +510,9 @@ lemma nG_hasDerivAt (hx : x ∈ Di) : HasDerivAt nG (P x) x :=
 lemma nG'_hasDerivAt (hx : x ∈ Di) : HasDerivAt nG' (dnG' x) x := by
   have h₁ : HasDerivAt (fun t ↦ P t * (t - 2)) (P' x * (x - 2) + P x) x := by
     convert HasDerivAt.mul (hasDerivAt_P hx) (HasDerivAt.add_const (-2) (hasDerivAt_id' x)) using 1
-    ring
+    all_goals first | rfl | ring
   convert HasDerivAt.sub h₁ (nG_hasDerivAt hx) using 1
+  all_goals try rfl
   unfold dnG'
   ring
 
@@ -524,13 +521,14 @@ lemma nG'_continuousOn : ContinuousOn nG' Di :=
 
 lemma dnG'_hasDerivAt (hx : x ∈ Di) : HasDerivAt dnG' (ddnG' x) x := by
   convert HasDerivAt.mul (hasDerivAt_P' hx) (HasDerivAt.add_const (-2) (hasDerivAt_id' x)) using 1
+  all_goals try rfl
   unfold ddnG'
   ring
 
 
 lemma ddnG'_continuousAt (hx : x ∈ Di) : ContinuousAt ddnG' x :=
   ContinuousAt.add (ContinuousAt.mul (continuousAt_P'' hx)
-  (Continuous.continuousAt (continuous_add_right (-2)))) (continuousAt_P' hx)
+  (Continuous.continuousAt (continuous_add_const (-2)))) (continuousAt_P' hx)
 
 
 lemma pos_of_dist_two_lt_two {x : ℝ} (hx : dist x 2 < 2) : 0 < x := by
@@ -539,11 +537,12 @@ lemma pos_of_dist_two_lt_two {x : ℝ} (hx : dist x 2 < 2) : 0 < x := by
 
 lemma G_hasDerivAt_aux (hx : x ∈ Di \ {2}) : HasDerivAt G (G' x) x := by
   refine HasDerivAt.congr_on_open (IsOpen.and (isOpen_lt' _) isOpen_ne) hx
-      ?_ (fun _ hy ↦ (if_neg hy.2).symm)
+      ?_ (fun _ hy ↦ (ite_eq_right hy.2).symm)
   convert HasDerivAt.div (nG_hasDerivAt hx.1)
     (HasDerivAt.add_const (-2) (hasDerivAt_id' x)) (sub_ne_zero_of_ne hx.2 ) using 1
+  all_goals try rfl
   rw [mul_one];
-  exact if_neg hx.2
+  exact ite_eq_right hx.2
 
 open Polynomial
 
@@ -559,10 +558,11 @@ lemma G'_continuousAt_two : ContinuousAt G' 2 := by
   · intro k _
     interval_cases k <;> refine Filter.Eventually.of_forall ?_
     · intro x
-      convert Polynomial.hasDerivAt (X^2 - 4*X + 4 : ℝ[X]) _ <;> (norm_num; ring)
+      convert Polynomial.hasDerivAt (X^2 - 4*X + 4 : ℝ[X]) _ <;> norm_num
+      all_goals first | rfl | ring
     · intro x
       convert Polynomial.hasDerivAt (2*X - 4 : ℝ[X]) _ <;> norm_num
-      ring
+      all_goals first | rfl | ring
   · intro k _
     interval_cases k
     · simp [nG, nG']
@@ -692,7 +692,7 @@ lemma term₁_hasDerivAt (hxD : x ∈ Di)
   have h₅ : HasDerivAt (fun x ↦ (x - 2) * P x * (4 + W x))
       (P x * (4 + W x) + (x - 2) * (4 + W x) * P' x + (x - 2) * P x * W' x) x := by
     convert HasDerivAt.mul h₃ h₄ using 1
-    ring
+    all_goals first | rfl | ring
   have h₆ : HasDerivAt (fun x ↦ P x + 2) (P' x) x := HasDerivAt.add_const _ (hasDerivAt_P hxD)
   convert HasDerivAt.sub h₁ (HasDerivAt.div h₅ h₆ hP) using 1
   rw [term₂, P', W']
@@ -708,8 +708,8 @@ lemma term₂_pos_aux (hx : 0 ≤ x) : (-4 + 2 * P x + W x * P x) < 0 := by
   have hxD := (nonneg_mem_domain_interior hx)
   have h₁ {y : ℝ} (hy : y ∈ Di) : HasDerivAt (fun x ↦ -4 + 2 * P x) (2 * P' y) y  := by
     convert HasDerivAt.add (hasDerivAt_const y (-4))
-      (HasDerivAt.const_mul ?_ (hasDerivAt_P hy)) using 1
-    · ring
+      (HasDerivAt.const_mul 2 (hasDerivAt_P hy)) using 1
+    ring
   have h₂ {y : ℝ} (hy : y ∈ Di) : HasDerivAt (fun x ↦ W x * P x) (W' y * P y + W y * P' y) y :=
     HasDerivAt.mul (hasDerivAt_W₀ hy) (hasDerivAt_P hy)
   have h₃ {y : ℝ} (hy : y ∈ Di) : HasDerivAt f (f' y) y := by
