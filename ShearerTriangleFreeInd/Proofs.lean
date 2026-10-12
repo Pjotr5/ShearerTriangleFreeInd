@@ -26,10 +26,11 @@ statements are in `ShearerTriangleFreeInd.Main`.
 ## Main results
 
 * `SimpleGraph.Shearer_bound`: for triangle-free `G` and every `f` satisfying the convexity
-  inequality `ConvexIneq f f'` and a positivity side condition,
+  inequality `ConvexIneq f f'`, with `f'` nonpositive on the positives and the Shearer error
+  side condition,
   `α(G) ≥ #V(G) * f d(G)`.
 * `SimpleGraph.independent_set_count_bound`: the analogous exponential lower bound on the
-  number of independent sets of `G`.
+  number of independent sets of `G`, with its exponential Shearer error side condition.
 
 ## References
 
@@ -472,7 +473,8 @@ private lemma Shearer_bound_aux {f f' : ℝ → ℝ} (hf : ConvexIneq f f')
 
 /-- **Shearer's independence-number bound.** For a triangle-free graph `G` and any `f`
 satisfying the convexity inequality `ConvexIneq f f'` with `f'` nonpositive on the
-positives, `α(G) ≥ #V(G) * f d(G)`. -/
+positives and `h_extra` (the Shearer error plus one is nonnegative for every finite graph),
+`α(G) ≥ #V(G) * f d(G)`. -/
 theorem Shearer_bound (hT : G.CliqueFree 3) {f f' : ℝ → ℝ} (hf : ConvexIneq f f')
     (hf' : ∀ (x : ℝ), 0 < x → f' x ≤ 0)
     (h_extra : ∀ {V' : Type} [Fintype V'] {G' : SimpleGraph V'},
@@ -548,7 +550,9 @@ private lemma independent_set_count_bound_step {f f' : ℝ → ℝ} {n : ℕ}
   · simp [card_vertexFinset_eq_zero_of_isEmpty (not_nonempty_iff.mp hV), indepSetFinsetAll_nonempty]
 
 /-- The number of independent sets of a triangle-free graph `G` is at least
-`exp (#V(G) * f d(G))` for every `f` satisfying the convexity inequality `ConvexIneq f f'`. -/
+`exp (#V(G) * f d(G))` when `f` satisfies `ConvexIneq f f'`, `f'` is nonpositive on the
+positives, and `h_extra` holds: the two exponentiated Shearer errors sum to at least one
+for every finite graph. -/
 theorem independent_set_count_bound (hT : G.CliqueFree 3) {f f' : ℝ → ℝ}
     (hf : ConvexIneq f f')
     (hf' : ∀ (x : ℝ), 0 < x → f' x ≤ 0)

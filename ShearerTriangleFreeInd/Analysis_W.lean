@@ -314,7 +314,7 @@ lemma image_affine_uIcc (a b c d : ℝ) :
   rw [Set.image_const_mul_uIcc, Set.image_add_const_uIcc]
 
 lemma affine_continuous (a b : ℝ) : Continuous (a * · + b) :=
-  Continuous.add (continuous_mul_left _) continuous_const
+  Continuous.add (continuous_const_mul _) continuous_const
 
 lemma uIcc_sub_connected {a b : ℝ} {U : Set ℝ} (hU : IsConnected U) (ha : a ∈ U) (hb : b ∈ U) :
     Set.uIcc a b ⊆ U :=
@@ -346,7 +346,6 @@ lemma IntAverage_eq (a b : ℝ) (g : ℝ → ℝ) (hCont : ContinuousOn g (Set.u
         ext; ring
       · exact continuousOn_const
       · convert hCont
-        all_goals try rfl
         rw [image_affine_uIcc]
         congr! <;> ring
 

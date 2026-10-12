@@ -1,9 +1,19 @@
+/-
+Copyright (c) 2024 Pjotr Buys. All rights reserved.
+Authors: Pjotr Buys
+-/
+
 import Mathlib
 import ShearerTriangleFreeInd.Analysis
 import ShearerTriangleFreeInd.Analysis_W
 import ShearerTriangleFreeInd.Proofs
+/-!
+# Bounds for triangle-free graphs
 
-
+The two main statements give Shearer's lower bound on the independence number and the
+lower bound on the number of independent sets from [BvdHK2025]. Their proofs combine the
+analytic results in `Analysis` and `Analysis_W` with the combinatorial bounds in `Proofs`.
+-/
 
 namespace SimpleGraph
 

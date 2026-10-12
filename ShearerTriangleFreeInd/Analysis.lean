@@ -386,7 +386,6 @@ lemma hasDerivAtInvSq (hx : 0 < x) : HasDerivAt (fun y ↦ 1 / y^2) (- 2 / x^3) 
   · ext _; simp
   · field_simp
   · convert Polynomial.hasDerivAt (X (R := ℝ) ^ 2) _ <;> norm_num
-    all_goals rfl
   · positivity
 
 -- `F`
@@ -529,7 +528,6 @@ lemma hasDerivAt_nF''₂ (hx : 0 < x) : HasDerivAt nF''₂ (nF''₃ x) x := by
   · ring
   · convert HasDerivAt.add (hasDerivAt_const x (-4))
       (HasDerivAt.const_mul 4 (hasDerivAtInv hx)) using 1
-    all_goals try rfl
     · ext _; rw [Pi.add_apply]; ring
     · ring
 
