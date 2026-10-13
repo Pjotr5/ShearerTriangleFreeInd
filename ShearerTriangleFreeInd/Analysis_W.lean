@@ -1,10 +1,11 @@
 import Mathlib
 import ShearerTriangleFreeInd.Analysis
 
-/-!
-# Lambert W and the independent set counting bound
 
-Construct Lambert W and establish the analytical properties used in the counting bound.
+
+
+/-
+## Definition of LambertW
 -/
 
 open Real
